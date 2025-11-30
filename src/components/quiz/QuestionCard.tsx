@@ -1,65 +1,95 @@
+"use client";
 
-import { Edit, Trash2 } from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import { Edit, Trash2, MoreVertical, Star, CheckCircle } from "lucide-react";
 import type { Question } from "@/src/types/quiz";
 
 type QuestionCardProps = {
   question: Question;
   index: number;
-  onEdit: (question: Question) => void;
-  onDelete: (id: number) => void;
+  onEdit: () => void;
+  onDelete: () => void;
 };
 
 export default function QuestionCard({ question, index, onEdit, onDelete }: QuestionCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-white flex flex-col">
+    <div className="bg-white rounded-2xl p-6 soft-shadow border border-slate-200/80 flex flex-col transition-all duration-300">
       {/* Header Card */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-2">
-          <span className="bg-gray-100 text-gray-700 px-2 py-1 text-xs font-bold rounded">Q{index + 1}</span>
-          <span className="text-sm font-semibold text-[#007aaa]">{question.points} Points</span>
+      <div className="flex justify-between items-start mb-4">
+        {/* Points Chip */}
+        <div className="flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
+          <Star size={14} className="fill-amber-500" />
+          <span className="text-sm font-bold">{question.points} {question.points > 1 ? 'Points' : 'Point'}</span>
+        </div>
+        
+        {/* Actions Menu */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+            title="More options"
+          >
+            <MoreVertical size={20} />
+          </button>
+          
+          {menuOpen && (
+            <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200/80 z-10 animate-fade-in-sm">
+              <button
+                onClick={() => { onEdit(); setMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 text-left rounded-t-md"
+              >
+                <Edit size={16} /> <span>Edit</span>
+              </button>
+              <button
+                onClick={() => { onDelete(); setMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 text-left rounded-b-md"
+              >
+                <Trash2 size={16} /> <span>Delete</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Question Content */}
-      <h3 className="text-lg text-gray-800 font-medium mb-4">{question.content}</h3>
+      <h3 className="text-lg text-slate-800 font-semibold mb-5 flex-grow">{question.content}</h3>
 
       {/* Options Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
         {question.options.map(opt => (
           <div
             key={opt.id}
-            className={`px-4 py-2 rounded border text-sm flex items-center gap-3
+            className={`px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 border
               ${opt.id === question.correctOptionId
-                ? "bg-green-50 border-green-200 text-green-800 font-medium"
-                : "bg-white border-gray-200 text-gray-600"
+                ? "border-emerald-200 bg-emerald-50/50 text-slate-800"
+                : "bg-slate-50/80 border-slate-200/80 text-slate-700"
               }`}
           >
-            <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs border
-               ${opt.id === question.correctOptionId ? "border-green-600 bg-green-600 text-white" : "border-gray-300"}
+            <span className={`font-bold w-6 text-center
+              ${opt.id === question.correctOptionId ? "text-emerald-600" : "text-slate-500"}
             `}>
-              {opt.id}
+              {opt.id}.
             </span>
-            {opt.text}
+            <span className="flex-grow">{opt.text}</span>
+            {opt.id === question.correctOptionId && (
+              <CheckCircle size={18} className="text-emerald-500 flex-shrink-0" />
+            )}
           </div>
         ))}
-      </div>
-
-      {/* Actions */}
-      <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-2">
-        <button
-          onClick={() => onEdit(question)}
-          className="p-2 text-gray-500 hover:text-[#007aaa] hover:bg-blue-50 rounded flex items-center gap-1.5"
-          title="Edit"
-        >
-          <Edit size={16} /> <span className="text-sm font-medium">Edit</span>
-        </button>
-        <button
-          onClick={() => onDelete(question.id)}
-          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded flex items-center gap-1.5"
-          title="Delete"
-        >
-          <Trash2 size={16} /> <span className="text-sm font-medium">Delete</span>
-        </button>
       </div>
     </div>
   );

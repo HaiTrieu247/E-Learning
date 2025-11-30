@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle, Save, X } from "lucide-react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { Plus, Loader2, AlertCircle, CheckCircle, Save, X, Trash2, Palette, Star } from "lucide-react";
 
 import type { Question } from "@/src/types/quiz";
 import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from "@/src/services/quizService";
@@ -9,9 +9,9 @@ import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from "@/
 import QuizToolbar from "@/src/components/quiz/QuizToolbar";
 import QuestionCard from "@/src/components/quiz/QuestionCard";
 
-// --- FORMS (Previously Modals) ---
+import './QuizPage.css'; // Import the new styles
 
-// Re-usable Question Form component
+// --- FORMS (Previously Modals) ---
 export type QuestionFormData = Omit<Question, 'id' | 'createdAt'>;
 
 const initialFormData: QuestionFormData = {
@@ -21,6 +21,7 @@ const initialFormData: QuestionFormData = {
   points: 1,
 };
 
+// --- Re-usable Question Form component (New Design) ---
 function QuestionForm({ 
     editingQuestion,
     isSaving, 
@@ -35,6 +36,18 @@ function QuestionForm({
     showNotification: (type: 'error' | 'success', msg: string) => void;
 }) {
   const [formData, setFormData] = useState<QuestionFormData>(initialFormData);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const optionColors = ["bg-rose-100 text-rose-700", "bg-sky-100 text-sky-700", "bg-amber-100 text-amber-700", "bg-teal-100 text-teal-700"];
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+        textareaRef.current.style.height = 'inherit';
+        const scrollHeight = textareaRef.current.scrollHeight;
+        textareaRef.current.style.height = `${scrollHeight}px`;
+    }
+  }, [formData.content]);
 
   useEffect(() => {
     if (editingQuestion) {
@@ -72,47 +85,54 @@ function QuestionForm({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 my-4 space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-bold text-gray-800">{editingQuestion ? "Edit Question" : "Create New Question"}</h3>
-      </div>
+    <div className="bg-white rounded-2xl soft-shadow border border-slate-200/80 p-8 my-6 space-y-6 animate-fade-in">
+      <h3 className="text-xl font-bold text-slate-800">{editingQuestion ? "Edit Question" : "Create New Question"}</h3>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Question Content <span className="text-red-500">*</span></label>
-        <textarea 
-          className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-[#007aaa] focus:border-transparent outline-none"
-          rows={3}
-          value={formData.content}
-          onChange={(e) => setFormData({...formData, content: e.target.value})}
-          placeholder="Enter the question text here..."
-          disabled={isSaving}
-        />
+      {/* Question Content */}
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-slate-700">Question Content <span className="text-rose-500">*</span></label>
+        <div className="relative">
+            <textarea 
+              ref={textareaRef}
+              className="w-full border border-slate-300 rounded-lg p-3 focus-ring-indigo auto-resize-textarea"
+              value={formData.content}
+              onChange={(e) => setFormData({...formData, content: e.target.value})}
+              placeholder="e.g., What is the primary key in a relational database?"
+              disabled={isSaving}
+            />
+            <div className="absolute top-2 right-2 flex gap-1 text-slate-400">
+                <Palette size={16} />
+            </div>
+        </div>
       </div>
 
-      <div>
-         <label className="block text-sm font-medium text-gray-700 mb-1">Points</label>
+      {/* Points */}
+      <div className="space-y-2">
+         <label className="block text-sm font-semibold text-slate-700">Points</label>
          <input 
             type="number" 
+            min="0"
             step="0.5"
             value={formData.points}
             onChange={(e) => setFormData({...formData, points: parseFloat(e.target.value) || 0})}
-            className="w-32 border border-gray-300 rounded p-2 focus:ring-[#007aaa] outline-none disabled:bg-gray-100"
+            className="w-32 border border-slate-300 rounded-lg p-2 focus-ring-indigo disabled:bg-slate-100"
             disabled={isSaving}
          />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Answers Options <span className="text-red-500">*</span></label>
+      {/* Answer Options */}
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Answer Options <span className="text-rose-500">*</span></label>
         <div className="space-y-3">
           {formData.options.map((opt, idx) => (
-            <div key={opt.id} className="flex items-center gap-3">
-              <div className="w-8 font-bold text-gray-500 text-center">{opt.id}</div>
+            <div key={opt.id} className={`option-row ${formData.correctOptionId === opt.id ? 'correct' : ''}`}>
+              <div className={`w-8 h-8 flex-shrink-0 rounded-md flex items-center justify-center font-bold text-sm ${optionColors[idx]}`}>{opt.id}</div>
               <input 
                 type="text" 
                 value={opt.text}
                 onChange={(e) => handleOptionChange(idx, e.target.value)}
-                placeholder={`Option ${opt.id}`}
-                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#007aaa] outline-none disabled:bg-gray-100"
+                placeholder={`Answer ${opt.id}`}
+                className="flex-1 bg-transparent border-none outline-none text-sm text-slate-800 placeholder-slate-400 disabled:bg-transparent"
                 disabled={isSaving}
               />
               <input 
@@ -120,60 +140,64 @@ function QuestionForm({
                 name={`correctOption-${editingQuestion?.id || 'new'}`}
                 checked={formData.correctOptionId === opt.id}
                 onChange={() => setFormData({...formData, correctOptionId: opt.id})}
-                className="w-5 h-5 text-[#007aaa] cursor-pointer disabled:cursor-not-allowed"
+                className="custom-radio"
                 title="Mark as correct answer"
                 disabled={isSaving}
               />
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-right">Click the radio button to select the correct answer.</p>
+        <p className="text-xs text-slate-500 mt-2 text-right">Click the radio button on the right to select the correct answer.</p>
       </div>
 
-      <div className="flex justify-end gap-3 border-t pt-4">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
         <button 
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 font-medium disabled:opacity-50"
+          className="px-5 py-2.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-100 font-medium disabled:opacity-50 transition-colors"
           disabled={isSaving}
         >
           Cancel
         </button>
         <button 
           onClick={handleValidationAndSave}
-          className="px-6 py-2 bg-[#007aaa] text-white rounded hover:bg-[#006288] font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
           disabled={isSaving}
         >
-          {isSaving ? <><Save size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save</>}
+          {isSaving ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save Changes</>}
         </button>
       </div>
     </div>
   );
 }
 
-// Inline Delete Confirmation
+// --- Inline Delete Confirmation (New Design) ---
 function DeleteConfirmation({ onConfirm, onCancel, isDeleting }: { onConfirm: () => void, onCancel: () => void, isDeleting: boolean }) {
   return (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4 my-4 flex justify-between items-center">
-      <div>
-        <h4 className="font-bold text-red-800">Delete Question?</h4>
-        <p className="text-sm text-red-700">Are you sure? This action cannot be undone.</p>
-      </div>
-      <div className="flex gap-3">
-        <button
-          onClick={onCancel}
-          disabled={isDeleting}
-          className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 font-medium"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={isDeleting}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium"
-        >
-          {isDeleting ? "Deleting..." : "Delete"}
-        </button>
-      </div>
+    <div className="bg-white rounded-2xl soft-shadow border border-slate-200/80 p-6 my-6 flex items-start gap-4 animate-fade-in">
+        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center">
+            <Trash2 className="w-6 h-6 text-rose-600" />
+        </div>
+        <div className="flex-grow">
+            <h4 className="font-bold text-slate-800">Delete Question</h4>
+            <p className="text-sm text-slate-600 mt-1">Are you sure you want to permanently delete this question? This action cannot be undone.</p>
+        </div>
+        <div className="flex gap-3 flex-shrink-0 self-center">
+            <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+            >
+            Cancel
+            </button>
+            <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-5 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-medium flex items-center gap-2 transition-colors active:scale-95"
+            >
+            {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+        </div>
     </div>
   );
 }
@@ -209,7 +233,7 @@ export default function QuizManager() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, []); // showNotification is not a dependency
 
   useEffect(() => {
     fetchQuestions();
@@ -218,7 +242,8 @@ export default function QuizManager() {
   // --- Helpers ---
   const showNotification = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
-    setTimeout(() => setNotification(null), 3000);
+    const timer = setTimeout(() => setNotification(null), 3000);
+    return () => clearTimeout(timer);
   };
   
   const resetState = () => {
@@ -236,7 +261,7 @@ export default function QuizManager() {
     if (sortOrder === "points") {
       result.sort((a, b) => b.points - a.points);
     } else {
-      result.sort((a, b) => b.id - a.id); 
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); 
     }
     return result;
   }, [questions, searchTerm, sortOrder]);
@@ -279,98 +304,114 @@ export default function QuizManager() {
 
   // --- Render ---
   return (
-    <div className="max-w-7xl mx-auto p-8 font-sans">
-        
-      {/* Page Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quiz Management</h1>
-          <p className="text-sm text-gray-500">Manage questions for the Database Systems quiz.</p>
-        </div>
-        <button 
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-[#007aaa] hover:bg-[#006288] text-white px-4 py-2 rounded-md shadow-sm flex items-center gap-2 transition-colors"
-        >
-          {isAdding ? <><X size={18}/> Cancel</> : <><Plus size={18} /> Add Question</>}
-        </button>
-      </div>
-
-      {/* Toolbar */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-        <QuizToolbar 
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-            sortOrder={sortOrder}
-            onSortOrderChange={setSortOrder}
-        />
-      </div>
-
-      {/* ADD QUESTION FORM */}
-      {isAdding && (
-          <QuestionForm
-            editingQuestion={null}
-            isSaving={isSaving}
-            onSave={handleSave}
-            onCancel={resetState}
-            showNotification={showNotification}
-          />
-      )}
-
-      {/* QUESTION LIST */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20"><Loader2 className="w-8 h-8 text-gray-400 animate-spin" /></div>
-        ) : error ? (
-          <div className="text-center py-20 text-red-500 bg-red-50 rounded-lg shadow-sm">
-            <AlertCircle className="mx-auto w-10 h-10 mb-2" />
-            {error}
-          </div>
-        ) : filteredQuestions.length === 0 ? (
-            <div className="text-center py-20 text-gray-500 bg-white rounded-lg shadow-sm">
-              <p className="font-medium">No Questions Found</p>
-              <p className="text-sm">No questions matched your search. Try adding a new question.</p>
-            </div>
-        ) : (
-          filteredQuestions.map((q, index) => (
-            <React.Fragment key={q.id}>
-              <QuestionCard 
-                question={q}
-                index={index}
-                onEdit={() => { setEditingId(q.id); setDeletingId(null); setIsAdding(false); }}
-                onDelete={() => { setDeletingId(q.id); setEditingId(null); setIsAdding(false); }}
-              />
-              {/* EDIT FORM */}
-              {editingId === q.id && (
-                  <QuestionForm
-                      editingQuestion={q}
-                      isSaving={isSaving}
-                      onSave={handleSave}
-                      onCancel={resetState}
-                      showNotification={showNotification}
-                  />
-              )}
-              {/* DELETE CONFIRMATION */}
-              {deletingId === q.id && (
-                  <DeleteConfirmation 
-                      isDeleting={isDeleting}
-                      onConfirm={handleDeleteConfirm}
-                      onCancel={resetState}
-                  />
-              )}
-            </React.Fragment>
-          ))
-        )}
-      </div>
-      
-      {/* --- TOAST NOTIFICATION --- */}
+    <>
+      {/* --- TOAST NOTIFICATION (New Design) --- */}
       {notification && (
-        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up z-[50]
-          ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
-        `}>
-          {notification.type === 'success' ? <CheckCircle size={20}/> : <AlertCircle size={20}/>}
-          <span className="font-medium">{notification.msg}</span>
+        <div className={`toast-notification ${notification.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+          {notification.type === 'success' ? <CheckCircle size={22}/> : <AlertCircle size={22}/>}
+          <span className="font-semibold">{notification.msg}</span>
         </div>
       )}
-    </div>
+
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        
+        {/* Sticky Header + Toolbar */}
+        <div className="sticky-header mb-6 -mx-4 -mt-4 md:-mx-8 md:-mt-8 p-4 md:p-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Page Header */}
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                    <h1 className="text-3xl font-bold text-slate-800">Quiz Management</h1>
+                    <p className="text-sm text-slate-500 mt-1">Manage questions for the Database Systems quiz.</p>
+                    </div>
+                    <button 
+                    onClick={() => { setIsAdding(!isAdding); setEditingId(null); setDeletingId(null); }}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95"
+                    >
+                    {isAdding ? <><X size={18}/> Cancel</> : <><Plus size={18} /> Add Question</>}
+                    </button>
+                </div>
+
+                {/* Toolbar */}
+                <div className="bg-white/80 p-4 rounded-xl border border-slate-200/80 soft-shadow">
+                    <QuizToolbar 
+                        searchTerm={searchTerm}
+                        onSearchTermChange={setSearchTerm}
+                        sortOrder={sortOrder}
+                        onSortOrderChange={setSortOrder}
+                    />
+                </div>
+            </div>
+        </div>
+
+        {/* ADD QUESTION FORM */}
+        {isAdding && (
+            <QuestionForm
+                editingQuestion={null}
+                isSaving={isSaving}
+                onSave={handleSave}
+                onCancel={resetState}
+                showNotification={showNotification}
+            />
+        )}
+
+        {/* QUESTION LIST */}
+        <div className="space-y-5">
+            {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 text-slate-500">
+                <Loader2 className="w-10 h-10 animate-spin" />
+                <p className="mt-4 font-medium">Loading Questions...</p>
+            </div>
+            ) : error ? (
+            <div className="text-center py-20 text-rose-600 bg-rose-50 rounded-2xl soft-shadow">
+                <AlertCircle className="mx-auto w-12 h-12 mb-3" />
+                <p className="font-bold text-lg">{error}</p>
+                <p className="text-sm mt-1">Please check your connection and try again.</p>
+            </div>
+            ) : filteredQuestions.length === 0 ? (
+                <div className="text-center py-24 text-slate-500 bg-white rounded-2xl soft-shadow">
+                    <h3 className="font-bold text-xl text-slate-700">No Questions Found</h3>
+                    <p className="text-sm mt-2">There are no questions matching your criteria. <br/> Why not add a new one?</p>
+                    <button 
+                        onClick={() => setIsAdding(true)}
+                        className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95 mx-auto"
+                    >
+                        <Plus size={18} /> Add Question
+                    </button>
+                </div>
+            ) : (
+            filteredQuestions.map((q, index) => (
+                <React.Fragment key={q.id}>
+                {editingId === q.id ? (
+                    <QuestionForm
+                        editingQuestion={q}
+                        isSaving={isSaving}
+                        onSave={handleSave}
+                        onCancel={resetState}
+                        showNotification={showNotification}
+                    />
+                ) : (
+                    <QuestionCard 
+                        question={q}
+                        index={index}
+                        onEdit={() => { setEditingId(q.id); setDeletingId(null); setIsAdding(false); }}
+                        onDelete={() => { setDeletingId(q.id); setEditingId(null); setIsAdding(false); }}
+                    />
+                )}
+                
+                {/* DELETE CONFIRMATION */}
+                {deletingId === q.id && (
+                    <DeleteConfirmation 
+                        isDeleting={isDeleting}
+                        onConfirm={handleDeleteConfirm}
+                        onCancel={resetState}
+                    />
+                )}
+                </React.Fragment>
+            ))
+            )}
+        </div>
+      </div>
+    </>
   );
 }

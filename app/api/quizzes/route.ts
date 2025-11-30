@@ -1,54 +1,24 @@
 // app/api/quizzes/route.ts
-import { NextResponse } from 'next/server';
-import type { Question } from '@/types/quiz';
-
-// --- Mock Data (Simulating a database) ---
-let questions: Question[] = [
-  {
-    id: 1,
-    content: "Which SQL statement is used to extract data from a database?",
-    options: [
-      { id: "A", text: "GET" },
-      { id: "B", text: "OPEN" },
-      { id: "C", text: "SELECT" },
-      { id: "D", text: "EXTRACT" },
-    ],
-    correctOptionId: "C",
-    points: 1.0,
-    createdAt: "2023-10-01",
-  },
-  {
-    id: 2,
-    content: "Which of the following is NOT a type of NoSQL database?",
-    options: [
-      { id: "A", text: "Key-Value" },
-      { id: "B", text: "Relational" },
-      { id: "C", text: "Document" },
-      { id: "D", text: "Graph" },
-    ],
-    correctOptionId: "B",
-    points: 1.5,
-    createdAt: "2023-10-05",
-  },
-];
+import { NextResponse, NextRequest } from 'next/server';
+import { getAllQuestions, addQuestion } from './mock-data';
 
 // GET: Fetch all questions
 export async function GET() {
+  // Add a delay to simulate network latency
+  await new Promise(resolve => setTimeout(resolve, 500));
+  const questions = getAllQuestions();
   return NextResponse.json(questions);
 }
 
 // POST: Create a new question
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const newQuestionData = await request.json();
-    const newQuestion: Question = {
-      id: Date.now(), // Use timestamp for unique ID
-      createdAt: new Date().toISOString(),
-      ...newQuestionData,
-    };
-    questions.unshift(newQuestion); // Add to the beginning of the array
+    const newQuestion = addQuestion(newQuestionData);
     return NextResponse.json(newQuestion, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ message: "Error creating question", error }, { status: 500 });
+    // It's good practice to log the actual error on the server
+    console.error("Error creating question:", error);
+    return NextResponse.json({ message: "Error creating question" }, { status: 500 });
   }
 }
