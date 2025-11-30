@@ -11,6 +11,11 @@ yarn dev
 # or
 pnpm dev
 ```
+```bash
+npm install lucide-react
+npm install tailwindcss-animate
+
+```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
