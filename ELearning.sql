@@ -231,6 +231,7 @@ BEGIN
     END IF;
 END$$
 
+---2.2---
 CREATE TRIGGER tg_auto_complete_course
 BEFORE UPDATE ON courseEnrollments
 FOR EACH ROW
@@ -239,25 +240,7 @@ BEGIN
         SET NEW.status = 'completed';
     END IF;
 END$$
-
-CREATE TRIGGER tg_check_quiz_total_score
-BEFORE INSERT ON quizQuestions
-FOR EACH ROW
-BEGIN
-    DECLARE current_total INT;
-    DECLARE max_marks INT;
-
-    SELECT COALESCE(SUM(questionScore), 0) INTO current_total 
-    FROM quizQuestions WHERE quizID = NEW.quizID;
-
-    SELECT totalMarks INTO max_marks FROM Quizzes WHERE quizID = NEW.quizID;
-
-    IF (current_total + NEW.questionScore) > max_marks THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: Total question score exceeds the TotalMarks of the Quiz.';
-    END IF;
-END$$
-
+---------
 DELIMITER ;
 
 -- Insert data into manageObjects
@@ -489,3 +472,338 @@ INSERT INTO submissionQuizzes (submissionID, learnerID, quizID, score) VALUES
 (6, 3, 1, 68.50);
 
 ------- Làm tiếp ở đây --------
+---2.1---
+DELIMITER $$
+
+CREATE TRIGGER tg_check_quiz_total_score
+BEFORE INSERT ON quizQuestions
+FOR EACH ROW
+BEGIN
+    DECLARE current_total INT;
+    DECLARE max_marks INT;
+
+    SELECT COALESCE(SUM(questionScore), 0) INTO current_total 
+    FROM quizQuestions WHERE quizID = NEW.quizID;
+
+    SELECT totalMarks INTO max_marks FROM Quizzes WHERE quizID = NEW.quizID;
+
+    IF (current_total + NEW.questionScore) > max_marks THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Total question score exceeds the TotalMarks of the Quiz.';
+    END IF;
+END$$
+
+CREATE TRIGGER tg_check_quiz_total_score_update
+BEFORE UPDATE ON quizQuestions
+FOR EACH ROW
+BEGIN
+    DECLARE current_total INT;
+    DECLARE max_marks INT;
+
+    SELECT COALESCE(SUM(questionScore), 0) INTO current_total 
+    FROM quizQuestions 
+    WHERE quizID = NEW.quizID AND questionID != OLD.questionID;
+
+    SELECT totalMarks INTO max_marks FROM Quizzes WHERE quizID = NEW.quizID;
+
+    IF (current_total + NEW.questionScore) > max_marks THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Update failed. Total question score exceeds the TotalMarks of the Quiz.';
+    END IF;
+END$$
+
+CREATE PROCEDURE sp_AddQuestion(
+    IN p_quizID INT,
+    IN p_description TEXT,
+    IN p_score INT
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Quizzes WHERE quizID = p_quizID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: The provided quizID does not exist.';
+    END IF;
+
+    IF LENGTH(TRIM(p_description)) = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Question description cannot be empty or whitespace only.';
+    END IF;
+
+    IF p_score <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Question score must be greater than 0.';
+    END IF;
+
+    INSERT INTO quizQuestions (quizID, questionDescription, questionScore)
+    VALUES (p_quizID, p_description, p_score);
+
+    SELECT 'Question added successfully' AS Message;
+END$$
+
+CREATE PROCEDURE sp_UpdateQuestion(
+    IN p_questionID INT,
+    IN p_newDescription TEXT,
+    IN p_newScore INT
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM quizQuestions WHERE questionID = p_questionID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Question ID not found.';
+    END IF;
+
+    IF LENGTH(TRIM(p_newDescription)) = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Question description cannot be empty.';
+    END IF;
+
+    IF p_newScore <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Question score must be greater than 0.';
+    END IF;
+
+    UPDATE quizQuestions
+    SET questionDescription = p_newDescription,
+        questionScore = p_newScore
+    WHERE questionID = p_questionID;
+
+    SELECT 'Question updated successfully' AS Message;
+END$$
+
+CREATE PROCEDURE sp_DeleteQuestion(
+    IN p_questionID INT
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM quizQuestions WHERE questionID = p_questionID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Question ID not found.';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM questionOptions WHERE questionID = p_questionID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Cannot delete question. Standard options exist for this question. Please delete the options first to ensure data integrity.';
+    END IF;
+
+    DELETE FROM quizQuestions WHERE questionID = p_questionID;
+
+    SELECT 'Question deleted successfully' AS Message;
+END$$
+
+DELIMITER ;
+
+---2.3---
+---for quizzes----
+CREATE PROCEDURE sp_GetQuizDetails(
+    IN p_quizID INT
+)
+BEGIN
+    -- Kiểm tra xem Quiz có tồn tại không (Optional validation)
+    IF NOT EXISTS (SELECT 1 FROM Quizzes WHERE quizID = p_quizID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Quiz ID not found.';
+    END IF;
+
+    -- Query chính thỏa yêu cầu
+    SELECT 
+        q.questionID,
+        q.questionDescription,
+        q.questionScore,
+        o.optionID,
+        o.optionText,
+        CASE 
+            WHEN o.isCorrect = 1 THEN 'True' 
+            ELSE 'False' 
+        END AS IsCorrectAnswer
+    FROM quizQuestions q
+    JOIN questionOptions o ON q.questionID = o.questionID
+    WHERE q.quizID = p_quizID
+    ORDER BY q.questionID ASC, o.optionID ASC;
+
+END$$
+
+CREATE PROCEDURE sp_GetQuizStatistics(
+    IN p_assignmentID INT,
+    IN p_minQuestions INT
+)
+BEGIN
+    SELECT 
+        z.quizTitle,
+        z.totalMarks AS MaxAllowedScore,
+        COUNT(qq.questionID) AS TotalQuestions,
+        SUM(qq.questionScore) AS CurrentTotalScore
+    FROM Quizzes z
+    JOIN quizQuestions qq ON z.quizID = qq.quizID
+    WHERE z.assignmentID = p_assignmentID
+    GROUP BY z.quizID, z.quizTitle, z.totalMarks
+    HAVING COUNT(qq.questionID) >= p_minQuestions
+    ORDER BY CurrentTotalScore DESC;
+
+END$$
+
+DELIMITER ;
+
+---2.4---
+--tính progress sau khi hoàn thành quiz---
+DELIMITER $$
+
+CREATE FUNCTION UpdateCourseProgress(input_learnerID INT, input_courseID INT) 
+RETURNS DECIMAL(5,2)
+MODIFIES SQL DATA
+DETERMINISTIC
+BEGIN
+    -- 1. Khai báo biến
+    DECLARE done INT DEFAULT FALSE; -- Biến cờ cho Cursor
+    DECLARE v_quizScore DECIMAL(5,2);
+    DECLARE v_passingMarks INT;
+    DECLARE v_calculatedProgress DECIMAL(5,2) DEFAULT 0.00;
+    DECLARE v_enrollmentExists INT;
+    
+    -- 2. Khai báo Cursor
+    -- Query này lấy điểm cao nhất (MAX) của mỗi bài quiz thuộc khóa học đó mà học viên đã làm
+    -- Việc dùng MAX và GROUP BY giúp đảm bảo nếu làm lại nhiều lần chỉ tính 1 lần đậu.
+    DECLARE quiz_cursor CURSOR FOR 
+        SELECT MAX(sq.score), q.passingMarks
+        FROM submissionQuizzes sq
+        JOIN Quizzes q ON sq.quizID = q.quizID
+        JOIN lessonAssignments la ON q.assignmentID = la.assignmentID
+        JOIN moduleLessons ml ON la.lessonID = ml.lessonID
+        JOIN courseModules cm ON ml.moduleID = cm.moduleID
+        WHERE sq.learnerID = input_learnerID 
+          AND cm.courseID = input_courseID
+        GROUP BY sq.quizID;
+
+    -- 3. Handler để thoát vòng lặp khi hết dữ liệu trong Cursor
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- 4. Validate (Kiểm tra dữ liệu đầu vào)
+    -- Kiểm tra xem học viên có đang đăng ký khóa học này không
+    SELECT COUNT(*) INTO v_enrollmentExists 
+    FROM courseEnrollments 
+    WHERE learnerID = input_learnerID AND courseID = input_courseID;
+
+    IF v_enrollmentExists = 0 THEN
+        RETURN -1.00; -- Trả về -1 nếu không tìm thấy dữ liệu đăng ký
+    END IF;
+
+    -- 5. Mở Cursor và bắt đầu vòng lặp
+    OPEN quiz_cursor;
+
+    read_loop: LOOP
+        FETCH quiz_cursor INTO v_quizScore, v_passingMarks;
+        
+        -- Nếu không còn dòng nào (Cursor đi đến cuối) thì thoát vòng lặp
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- 6. Logic tính toán (IF statement)
+        -- Nếu điểm thi >= điểm đậu thì cộng 10% vào tiến độ
+        IF v_quizScore >= v_passingMarks THEN
+            SET v_calculatedProgress = v_calculatedProgress + 10.00;
+        END IF;
+        
+    END LOOP;
+
+    CLOSE quiz_cursor;
+
+    -- Giới hạn tiến độ tối đa là 100%
+    IF v_calculatedProgress > 100.00 THEN
+        SET v_calculatedProgress = 100.00;
+    END IF;
+
+    -- 7. Cập nhật vào Database (Update table)
+    UPDATE courseEnrollments
+    SET progressPercentage = v_calculatedProgress,
+        status = IF(v_calculatedProgress = 100, 'completed', 'in-progress')
+    WHERE learnerID = input_learnerID AND courseID = input_courseID;
+
+    -- Trả về kết quả tiến độ mới
+    RETURN v_calculatedProgress;
+
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE FUNCTION CalculatePunctualityScore(input_learnerID INT, input_courseID INT) 
+RETURNS INT
+READS SQL DATA
+DETERMINISTIC
+BEGIN
+    -- 1. Khai báo biến
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_dueDate DATETIME;
+    DECLARE v_assignmentID INT;
+    DECLARE v_submissionDate DATETIME;
+    DECLARE v_currentScore INT DEFAULT 100; -- Điểm gốc bắt đầu là 100
+    DECLARE v_enrollmentCheck INT;
+
+    -- 2. Khai báo Cursor
+    -- Lấy tất cả các bài tập (Assignments) bắt buộc trong khóa học này
+    -- Kèm theo DueDate để so sánh
+    DECLARE assignment_cursor CURSOR FOR 
+        SELECT la.assignmentID, la.dueDate
+        FROM lessonAssignments la
+        JOIN moduleLessons ml ON la.lessonID = ml.lessonID
+        JOIN courseModules cm ON ml.moduleID = cm.moduleID
+        WHERE cm.courseID = input_courseID;
+
+    -- 3. Handler thoát vòng lặp
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- 4. Validate dữ liệu đầu vào
+    SELECT COUNT(*) INTO v_enrollmentCheck 
+    FROM courseEnrollments 
+    WHERE learnerID = input_learnerID AND courseID = input_courseID;
+
+    IF v_enrollmentCheck = 0 THEN
+        RETURN 0; -- Người dùng không học khóa này, trả về 0
+    END IF;
+
+    -- 5. Mở Cursor
+    OPEN assignment_cursor;
+
+    -- 6. Vòng lặp duyệt qua từng bài tập
+    check_loop: LOOP
+        FETCH assignment_cursor INTO v_assignmentID, v_dueDate;
+        
+        IF done THEN
+            LEAVE check_loop;
+        END IF;
+
+        -- Lấy thời gian nộp bài sớm nhất của học viên cho assignment này
+        -- Logic join: Assignment -> Exercise -> SubmissionExercise -> LearnerSubmission
+        -- Dùng MIN(dateSubmitted) vì học viên có thể submit nhiều lần, ta lấy lần đầu tiên để xét
+        SELECT MIN(ls.dateSubmitted) INTO v_submissionDate
+        FROM learnerSubmissions ls
+        JOIN submissionExercises se ON ls.submissionID = se.submissionID
+        JOIN exercises ex ON se.exerciseID = ex.exerciseID
+        WHERE ls.learnerID = input_learnerID 
+          AND ex.assignmentID = v_assignmentID;
+
+        -- 7. Logic tính toán (IF/ELSEIF cấu trúc lồng nhau hoặc liên tiếp)
+        
+        -- Trường hợp 1: Chưa nộp bài bao giờ (v_submissionDate sẽ là NULL)
+        IF v_submissionDate IS NULL THEN
+            SET v_currentScore = v_currentScore - 20;
+            
+        -- Trường hợp 2: Có nộp nhưng nộp trễ (Ngày nộp > Hạn chót)
+        ELSEIF v_submissionDate > v_dueDate THEN
+            SET v_currentScore = v_currentScore - 10;
+            
+        -- Trường hợp 3: Nộp đúng hạn -> Không làm gì cả (giữ nguyên điểm)
+        END IF;
+
+        -- Chặn dưới: Nếu điểm bị trừ xuống dưới 0 thì set lại về 0
+        IF v_currentScore < 0 THEN
+            SET v_currentScore = 0;
+        END IF;
+        
+    END LOOP;
+
+    CLOSE assignment_cursor;
+
+    RETURN v_currentScore;
+
+END$$
+
+DELIMITER ;
