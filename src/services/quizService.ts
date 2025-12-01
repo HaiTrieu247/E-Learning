@@ -1,15 +1,19 @@
 // src/services/quizService.ts
-import type { Question } from '@/types/quiz';
+import type { Question, CreateQuestionData, UpdateQuestionData, Quiz } from '@/src/types/quiz';
 
 const API_BASE_URL = '/api/quizzes';
 
-// Type for the data sent to create a question (omitting id, createdAt)
-export type CreateQuestionData = Omit<Question, 'id' | 'createdAt'>;
-export type UpdateQuestionData = Partial<CreateQuestionData>;
+export const getQuizzesByCourse = async (courseID: number): Promise<Quiz[]> => {
+  const response = await fetch(`/api/courses/${courseID}/quizzes`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch quizzes for course');
+  }
+  return response.json();
+};
 
-
-export const getQuestions = async (): Promise<Question[]> => {
-  const response = await fetch(API_BASE_URL);
+export const getQuestions = async (quizID?: number): Promise<Question[]> => {
+  const url = quizID ? `${API_BASE_URL}?quizID=${quizID}` : API_BASE_URL;
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch questions');
   }

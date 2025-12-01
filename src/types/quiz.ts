@@ -12,3 +12,32 @@ export interface Question {
   points: number;
   createdAt: string;
 }
+
+// Quiz metadata (from Quizzes table)
+export interface Quiz {
+  quizID: number;
+  quizTitle: string;
+  totalMarks: number;
+  passingMarks: number;
+  quizDuration: number;
+  assignmentID: number;
+  lessonID?: number;
+  lessonTitle?: string;
+  moduleID?: number;
+  moduleTitle?: string;
+  courseID?: number;
+  questionCount?: number;
+  currentTotalScore?: number;
+}
+
+// Type for creating/updating questions (used in forms and API)
+export type CreateQuestionData = Omit<Question, 'id' | 'createdAt'>;
+export type UpdateQuestionData = Partial<CreateQuestionData>;
+
+// Backend service types
+export interface QuizStatistics {
+  quizTitle: string;
+  MaxAllowedScore: number;
+  TotalQuestions: number;
+  CurrentTotalScore: number;
+}
