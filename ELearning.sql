@@ -231,7 +231,6 @@ BEGIN
     END IF;
 END$$
 
----2.2---
 CREATE TRIGGER tg_auto_complete_course
 BEFORE UPDATE ON courseEnrollments
 FOR EACH ROW
@@ -589,8 +588,8 @@ END$$
 
 DELIMITER ;
 
----2.3---
----for quizzes----
+DELIMITER $$
+
 CREATE PROCEDURE sp_GetQuizDetails(
     IN p_quizID INT
 )
@@ -636,6 +635,36 @@ BEGIN
     HAVING COUNT(qq.questionID) >= p_minQuestions
     ORDER BY CurrentTotalScore DESC;
 
+END$$
+
+CREATE PROCEDURE sp_GetQuizzesByCourse(
+    IN p_courseID INT
+)
+BEGIN
+    SELECT DISTINCT
+        q.quizID,
+        q.quizTitle,
+        q.totalMarks,
+        q.passingMarks,
+        q.quizDuration,
+        q.assignmentID,
+        ml.lessonID,
+        ml.lessonTitle,
+        cm.moduleID,
+        cm.moduleTitle,
+        cm.courseID,
+        COUNT(DISTINCT qq.questionID) AS questionCount,
+        COALESCE(SUM(qq.questionScore), 0) AS currentTotalScore
+    FROM courses c
+    JOIN courseModules cm ON c.courseID = cm.courseID
+    JOIN moduleLessons ml ON cm.moduleID = ml.moduleID
+    JOIN lessonAssignments la ON ml.lessonID = la.lessonID
+    JOIN Quizzes q ON la.assignmentID = q.assignmentID
+    LEFT JOIN quizQuestions qq ON q.quizID = qq.quizID
+    WHERE c.courseID = p_courseID
+    GROUP BY q.quizID, q.quizTitle, q.totalMarks, q.passingMarks, q.quizDuration, 
+             q.assignmentID, ml.lessonID, ml.lessonTitle, cm.moduleID, cm.moduleTitle, cm.courseID
+    ORDER BY cm.moduleOrder ASC, ml.lessonOrder ASC;
 END$$
 
 DELIMITER ;

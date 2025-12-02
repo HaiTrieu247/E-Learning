@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Course } from '@/src/types/course'
 import SearchBar from './SearchBar'
 import AlphabetFilter from './AlphabetFilter'
@@ -11,8 +12,13 @@ interface CourseTableProps {
 }
 
 export default function CourseTable({ courses, loading }: CourseTableProps) {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null)
+  
+  const handleCourseClick = (courseID: number) => {
+    router.push(`/quizzes/by-course?courseID=${courseID}`)
+  }
 
   // Filter courses based on search and alphabet filter
   const filteredCourses = courses.filter((course: any) => {
@@ -76,7 +82,11 @@ export default function CourseTable({ courses, loading }: CourseTableProps) {
               </tr>
             ) : (
               filteredCourses.map((course: any) => (
-                <tr key={course.courseID} className="hover:bg-gray-50 transition-colors">
+                <tr 
+                  key={course.courseID} 
+                  onClick={() => handleCourseClick(course.courseID)}
+                  className="hover:bg-indigo-50 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 border text-center">{course.courseID}</td>
                   <td className="px-4 py-3 border font-medium text-gray-900">{course.courseTitle}</td>
                   <td className="px-4 py-3 border text-gray-600 text-sm">

@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle, Save, X, Trash2, Palette, Star } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Plus, Loader2, AlertCircle, CheckCircle, Save, X, Trash2, Palette, ArrowLeft } from "lucide-react";
 
-import type { Question } from "@/src/types/quiz";
+import type { Question, Quiz } from "@/src/types/quiz";
 import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from "@/src/services/quizService";
 
 import QuizToolbar from "@/src/components/quiz/QuizToolbar";
 import QuestionCard from "@/src/components/quiz/QuestionCard";
 
-import './QuizPage.css'; // Import the new styles
+import '../QuizPage.css';
 
-// --- FORMS (Previously Modals) ---
 export type QuestionFormData = Omit<Question, 'id' | 'createdAt'>;
 
 const initialFormData: QuestionFormData = {
@@ -21,7 +21,6 @@ const initialFormData: QuestionFormData = {
   points: 1,
 };
 
-// --- Re-usable Question Form component (New Design) ---
 function QuestionForm({ 
     editingQuestion,
     isSaving, 
@@ -40,7 +39,6 @@ function QuestionForm({
 
   const optionColors = ["bg-rose-100 text-rose-700", "bg-sky-100 text-sky-700", "bg-amber-100 text-amber-700", "bg-teal-100 text-teal-700"];
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
         textareaRef.current.style.height = 'inherit';
@@ -88,7 +86,6 @@ function QuestionForm({
     <div className="bg-white rounded-2xl soft-shadow border border-slate-200/80 p-8 my-6 space-y-6 animate-fade-in">
       <h3 className="text-xl font-bold text-slate-800">{editingQuestion ? "Edit Question" : "Create New Question"}</h3>
       
-      {/* Question Content */}
       <div className="space-y-2">
         <label className="block text-sm font-semibold text-slate-700">Question Content <span className="text-rose-500">*</span></label>
         <div className="relative">
@@ -106,7 +103,6 @@ function QuestionForm({
         </div>
       </div>
 
-      {/* Points */}
       <div className="space-y-2">
          <label className="block text-sm font-semibold text-slate-700">Points</label>
          <input 
@@ -120,7 +116,6 @@ function QuestionForm({
          />
       </div>
 
-      {/* Answer Options */}
       <div className="space-y-2">
         <label className="block text-sm font-semibold text-slate-700 mb-2">Answer Options <span className="text-rose-500">*</span></label>
         <div className="space-y-3">
@@ -150,7 +145,6 @@ function QuestionForm({
         <p className="text-xs text-slate-500 mt-2 text-right">Click the radio button on the right to select the correct answer.</p>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
         <button 
           onClick={onCancel}
@@ -171,7 +165,6 @@ function QuestionForm({
   );
 }
 
-// --- Inline Delete Confirmation (New Design) ---
 function DeleteConfirmation({ onConfirm, onCancel, isDeleting }: { onConfirm: () => void, onCancel: () => void, isDeleting: boolean }) {
   return (
     <div className="bg-white rounded-2xl soft-shadow border border-slate-200/80 p-6 my-6 flex items-start gap-4 animate-fade-in">
@@ -202,16 +195,17 @@ function DeleteConfirmation({ onConfirm, onCancel, isDeleting }: { onConfirm: ()
   );
 }
 
-// --- Main Component ---
-export default function QuizManager() {
-  // State
+export default function QuizDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const quizID = params.id ? parseInt(params.id as string) : null;
+  
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // New state for inline forms
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -220,12 +214,17 @@ export default function QuizManager() {
   const [sortOrder, setSortOrder] = useState<"newest" | "points">("newest");
   const [notification, setNotification] = useState<{type: 'success'|'error', msg: string} | null>(null);
 
-  // --- Data Fetching ---
   const fetchQuestions = useCallback(async () => {
+    if (!quizID) {
+      setError("Invalid quiz ID");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getQuestions();
+      const data = await getQuestions(quizID);
       setQuestions(data);
     } catch (e) {
       setError("Failed to load questions. Please try again later.");
@@ -233,13 +232,12 @@ export default function QuizManager() {
     } finally {
       setIsLoading(false);
     }
-  }, []); // showNotification is not a dependency
+  }, [quizID]);
 
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
 
-  // --- Helpers ---
   const showNotification = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
     const timer = setTimeout(() => setNotification(null), 3000);
@@ -252,7 +250,6 @@ export default function QuizManager() {
       setDeletingId(null);
   }
 
-  // --- Logic: Search & Sort ---
   const filteredQuestions = useMemo(() => {
     let result = questions.filter((q) =>
       q.content.toLowerCase().includes(searchTerm.toLowerCase())
@@ -266,14 +263,13 @@ export default function QuizManager() {
     return result;
   }, [questions, searchTerm, sortOrder]);
   
-  // --- CRUD Handlers ---
   const handleSave = async (formData: QuestionFormData, id: number | null) => {
     setIsSaving(true);
     try {
-      if (id) { // Update
+      if (id) {
         await updateQuestion(id, formData);
         showNotification("success", "Question updated successfully!");
-      } else { // Create
+      } else {
         await createQuestion(formData as any);
         showNotification("success", "New question added successfully!");
       }
@@ -302,10 +298,12 @@ export default function QuizManager() {
     }
   };
 
-  // --- Render ---
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <>
-      {/* --- TOAST NOTIFICATION (New Design) --- */}
       {notification && (
         <div className={`toast-notification ${notification.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
           {notification.type === 'success' ? <CheckCircle size={22}/> : <AlertCircle size={22}/>}
@@ -315,14 +313,20 @@ export default function QuizManager() {
 
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         
-        {/* Sticky Header + Toolbar */}
         <div className="sticky-header mb-6 -mx-4 -mt-4 md:-mx-8 md:-mt-8 p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
-                {/* Page Header */}
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 mb-4 transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                  <span className="font-medium">Back to Quizzes</span>
+                </button>
+
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                    <h1 className="text-3xl font-bold text-slate-800">Quiz Management</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage questions for the Database Systems quiz.</p>
+                    <h1 className="text-3xl font-bold text-slate-800">Quiz Questions</h1>
+                    <p className="text-sm text-slate-500 mt-1">Quiz ID: {quizID}</p>
                     </div>
                     <button 
                     onClick={() => { setIsAdding(!isAdding); setEditingId(null); setDeletingId(null); }}
@@ -332,7 +336,6 @@ export default function QuizManager() {
                     </button>
                 </div>
 
-                {/* Toolbar */}
                 <div className="bg-white/80 p-4 rounded-xl border border-slate-200/80 soft-shadow">
                     <QuizToolbar 
                         searchTerm={searchTerm}
@@ -344,7 +347,6 @@ export default function QuizManager() {
             </div>
         </div>
 
-        {/* ADD QUESTION FORM */}
         {isAdding && (
             <QuestionForm
                 editingQuestion={null}
@@ -355,7 +357,6 @@ export default function QuizManager() {
             />
         )}
 
-        {/* QUESTION LIST */}
         <div className="space-y-5">
             {isLoading ? (
             <div className="flex flex-col items-center justify-center py-24 text-slate-500">
@@ -399,7 +400,6 @@ export default function QuizManager() {
                     />
                 )}
                 
-                {/* DELETE CONFIRMATION */}
                 {deletingId === q.id && (
                     <DeleteConfirmation 
                         isDeleting={isDeleting}

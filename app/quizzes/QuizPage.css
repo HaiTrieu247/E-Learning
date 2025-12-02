@@ -1,0 +1,130 @@
+/* Using a more modern font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+body {
+    /* Apply a subtle pattern to the background for depth */
+    background-color: #f8fafc; /* Slightly off-white for a softer feel */
+    background-image: radial-gradient(#e0e7ff 0.5px, transparent 0.5px);
+    background-size: 16px 16px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom soft shadows inspired by the user's suggestion */
+.soft-shadow {
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.07), 0 2px 4px -2px rgba(99, 102, 241, 0.07);
+    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.soft-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.12), 0 4px 6px -4px rgba(99, 102, 241, 0.08);
+}
+
+
+/* Auto-resize textarea - we will use a library for this, but keep the style */
+.auto-resize-textarea {
+    resize: none;
+    overflow: hidden;
+    min-height: 80px;
+}
+
+/* Custom focus ring */
+.focus-ring-indigo:focus-within, .focus-ring-indigo:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3) !important;
+    border-color: #818cf8 !important;
+}
+
+/* Sticky header with blur */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    backdrop-filter: blur(8px);
+    background-color: rgba(248, 250, 252, 0.7); /* Match body bg */
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Toast notification with progress bar */
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-24px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toast-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+.toast-notification {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    border-radius: 0.75rem; /* more rounded */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    color: white;
+    z-index: 50;
+    animation: toast-in 0.4s cubic-bezier(0.21, 1.02, 0.73, 1); /* Smoother animation */
+    will-change: transform, opacity;
+}
+
+.toast-notification::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    border-bottom-left-radius: 0.75rem;
+    border-bottom-right-radius: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    animation: toast-progress 3s linear forwards;
+}
+
+/* Option row unified block style */
+.option-row {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.option-row:focus-within {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.option-row.correct {
+    background-color: #f0fdf4; /* bg-green-50 */
+    border-color: #22c55e; /* border-green-500 */
+}
+
+/* Custom radio button */
+.custom-radio {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    border: 2px solid #9ca3af;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.custom-radio:checked {
+    background-color: #6366f1; /* indigo-500 */
+    border-color: #6366f1;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
