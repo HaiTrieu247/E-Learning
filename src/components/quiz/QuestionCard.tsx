@@ -30,10 +30,18 @@ export default function QuestionCard({ question, index, onEdit, onDelete }: Ques
     <div className="bg-white rounded-2xl p-6 soft-shadow border border-slate-200/80 flex flex-col transition-all duration-300">
       {/* Header Card */}
       <div className="flex justify-between items-start mb-4">
-        {/* Points Chip */}
-        <div className="flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
-          <Star size={14} className="fill-amber-500" />
-          <span className="text-sm font-bold">{question.points} {question.points > 1 ? 'Points' : 'Point'}</span>
+        <div className="flex items-center gap-2">
+          {/* Quiz Badge */}
+          {question.quizTitle && (
+            <div className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-semibold">
+              {question.quizTitle}
+            </div>
+          )}
+          {/* Points Chip */}
+          <div className="flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
+            <Star size={14} className="fill-amber-500" />
+            <span className="text-sm font-bold">{question.points} {question.points > 1 ? 'Points' : 'Point'}</span>
+          </div>
         </div>
         
         {/* Actions Menu */}

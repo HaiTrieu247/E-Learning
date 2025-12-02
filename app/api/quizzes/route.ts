@@ -6,9 +6,18 @@ import * as quizService from '@/backend/services/quizService';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const quizID = parseInt(searchParams.get('quizID') || '1');
+    const quizIDParam = searchParams.get('quizID');
     
-    const questions = await quizService.getQuizQuestions(quizID);
+    let questions;
+    if (quizIDParam) {
+      // Get questions for specific quiz
+      const quizID = parseInt(quizIDParam);
+      questions = await quizService.getQuizQuestions(quizID);
+    } else {
+      // Get ALL questions from ALL quizzes
+      questions = await quizService.getAllQuestions();
+    }
+    
     return NextResponse.json(questions);
   } catch (error: any) {
     console.error("Error fetching questions:", error);

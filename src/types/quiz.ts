@@ -6,6 +6,8 @@ export interface Option {
 
 export interface Question {
   id: number;
+  quizID?: number;
+  quizTitle?: string;
   content: string;
   options: Option[];
   correctOptionId: string;

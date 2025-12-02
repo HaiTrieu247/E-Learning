@@ -1,6 +1,77 @@
 import createConnection from '../config/db.js';
 
 /**
+ * Get ALL questions from ALL quizzes with their options
+ * Uses sp_GetQuizDetails for each quiz
+ */
+export const getAllQuestions = async () => {
+    const connection = await createConnection();
+    try {
+        // First, get all quiz IDs
+        const [quizzes] = await connection.query('SELECT quizID, quizTitle FROM Quizzes ORDER BY quizID');
+        
+        if (quizzes.length === 0) {
+            return [];
+        }
+        
+        const allQuestions = [];
+        
+        // For each quiz, call sp_GetQuizDetails
+        for (const quiz of quizzes) {
+            const [results] = await connection.query('CALL sp_GetQuizDetails(?)', [quiz.quizID]);
+            
+            if (!results[0] || results[0].length === 0) {
+                continue; // Skip quizzes with no questions
+            }
+            
+            // Transform stored procedure results
+            const questionsMap = new Map();
+            
+            results[0].forEach(row => {
+                if (!questionsMap.has(row.questionID)) {
+                    questionsMap.set(row.questionID, {
+                        id: row.questionID,
+                        quizID: quiz.quizID,
+                        quizTitle: quiz.quizTitle,
+                        content: row.questionDescription,
+                        points: row.questionScore,
+                        options: [],
+                        correctOptionId: null,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                
+                const question = questionsMap.get(row.questionID);
+                
+                // Only add option if it exists (handle LEFT JOIN nulls)
+                if (row.optionID) {
+                    const optionIndex = question.options.length;
+                    const optionId = String.fromCharCode(65 + optionIndex); // A, B, C, D
+                    
+                    question.options.push({
+                        id: optionId,
+                        text: row.optionText
+                    });
+                    
+                    if (row.IsCorrectAnswer === 'True') {
+                        question.correctOptionId = optionId;
+                    }
+                }
+            });
+            
+            allQuestions.push(...Array.from(questionsMap.values()));
+        }
+        
+        // Sort by questionID descending (newest first)
+        return allQuestions.sort((a, b) => b.id - a.id);
+        
+    } catch (error) {
+        console.error('Error fetching all questions:', error);
+        throw error;
+    }
+};
+
+/**
  * Get all quiz questions with their options from a specific quiz
  * Uses sp_GetQuizDetails stored procedure from ELearning.sql (section 2.3)
  */

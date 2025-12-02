@@ -313,35 +313,30 @@ export default function QuizManager() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 pt-6">
         
-        {/* Sticky Header + Toolbar */}
-        <div className="sticky-header mb-6 -mx-4 -mt-4 md:-mx-8 md:-mt-8 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Page Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                    <h1 className="text-3xl font-bold text-slate-800">Quiz Management</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage questions for the Database Systems quiz.</p>
-                    </div>
-                    <button 
-                    onClick={() => { setIsAdding(!isAdding); setEditingId(null); setDeletingId(null); }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95"
-                    >
-                    {isAdding ? <><X size={18}/> Cancel</> : <><Plus size={18} /> Add Question</>}
-                    </button>
-                </div>
-
-                {/* Toolbar */}
-                <div className="bg-white/80 p-4 rounded-xl border border-slate-200/80 soft-shadow">
-                    <QuizToolbar 
-                        searchTerm={searchTerm}
-                        onSearchTermChange={setSearchTerm}
-                        sortOrder={sortOrder}
-                        onSortOrderChange={setSortOrder}
-                    />
-                </div>
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+                <h1 className="text-3xl font-bold text-slate-800">Quiz Management</h1>
+                <p className="text-sm text-slate-500 mt-1">Manage questions for the Database Systems quiz.</p>
             </div>
+            <button 
+                onClick={() => { setIsAdding(!isAdding); setEditingId(null); setDeletingId(null); }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95 whitespace-nowrap"
+            >
+                {isAdding ? <><X size={18}/> Cancel</> : <><Plus size={18} /> Add Question</>}
+            </button>
+        </div>
+
+        {/* Toolbar */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-smooth mb-6">
+            <QuizToolbar 
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                sortOrder={sortOrder}
+                onSortOrderChange={setSortOrder}
+            />
         </div>
 
         {/* ADD QUESTION FORM */}

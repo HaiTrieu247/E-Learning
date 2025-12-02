@@ -3,6 +3,7 @@ export interface Course {
   courseTitle: string
   courseDescription: string
   categoryID?: number
+  categoryName?: string
 }
 
 export interface CourseCategory {

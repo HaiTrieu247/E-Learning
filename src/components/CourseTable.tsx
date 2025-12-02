@@ -17,7 +17,7 @@ export default function CourseTable({ courses, loading }: CourseTableProps) {
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null)
   
   const handleCourseClick = (courseID: number) => {
-    router.push(`/quizzes/by-course?courseID=${courseID}`)
+    router.push(`/courses/${courseID}?courseID=${courseID}`)
   }
 
   // Filter courses based on search and alphabet filter

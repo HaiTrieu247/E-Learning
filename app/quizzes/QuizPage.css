@@ -35,15 +35,7 @@ body {
     border-color: #818cf8 !important;
 }
 
-/* Sticky header with blur */
-.sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    backdrop-filter: blur(8px);
-    background-color: rgba(248, 250, 252, 0.7); /* Match body bg */
-    border-bottom: 1px solid #e5e7eb;
-}
+/* Removed sticky header - not needed */
 
 /* Toast notification with progress bar */
 @keyframes toast-in {

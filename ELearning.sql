@@ -314,12 +314,16 @@ INSERT INTO adminManagement (adminID, managedObjectID, dateModified, actionType)
 (1, 11, '2024-11-01 16:45:00', 'pending_review');
 
 -- Insert data into courseEnrollments
+-- Note: learnerID 1=John, 2=Jane, 3=Sarah, 4=Lisa (based on learners table)
 INSERT INTO courseEnrollments (learnerID, courseID, enrollmentDate, certificationCode, certificationIssueDate, status, progressPercentage) VALUES
 (1, 1, '2024-02-01 08:00:00', 'CERT-WEB-2024-001', '2024-05-15', 'completed', 100.00),
 (1, 4, '2024-06-01 09:30:00', 'CERT-REACT-2024-001', '2024-06-01', 'in-progress', 65.50),
 (2, 2, '2024-02-05 10:00:00', 'CERT-DS-2024-001', '2024-02-05', 'in-progress', 40.00),
-(3, 1, '2024-03-15 14:00:00', 'CERT-WEB-2024-002', '2024-03-15', 'in-progress', 25.75),
-(4, 3, '2024-04-01 11:00:00', 'CERT-IOS-2024-001', '2024-04-01', 'in-progress', 50.00);
+(2, 1, '2024-02-10 10:00:00', 'CERT-WEB-2024-002', '2024-02-10', 'in-progress', 35.00),
+(3, 1, '2024-03-15 14:00:00', 'CERT-WEB-2024-003', '2024-03-15', 'in-progress', 25.75),
+(3, 3, '2024-04-01 11:00:00', 'CERT-IOS-2024-001', '2024-04-01', 'in-progress', 50.00),
+(4, 1, '2024-03-20 09:00:00', 'CERT-WEB-2024-004', '2024-03-20', 'in-progress', 20.00),
+(4, 2, '2024-04-05 10:00:00', 'CERT-DS-2024-002', '2024-04-05', 'in-progress', 30.00);
 
 -- Insert data into courseDesignments
 INSERT INTO courseDesignments (instructorID, courseID) VALUES
@@ -431,27 +435,101 @@ INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES
 (5, 'title', FALSE),
 (5, 'src', FALSE),
 (5, 'alternative', FALSE),
+(6, '<title>', TRUE),
+(6, '<meta>', FALSE),
+(6, '<head>', FALSE),
+(6, '<body>', FALSE),
+(7, '<h1>', TRUE),
+(7, '<h6>', FALSE),
+(7, '<head>', FALSE),
+(7, '<heading>', FALSE),
+(8, '<b>', TRUE),
+(8, '<bold>', FALSE),
+(8, '<bb>', FALSE),
+(8, '<fat>', FALSE),
+(9, '<input type="text">', TRUE),
+(9, '<textfield>', FALSE),
+(9, '<textinput>', FALSE),
+(9, '<input type="textfield">', FALSE);
 (10, 'Cascading Style Sheets', TRUE),
 (10, 'Computer Style Sheets', FALSE),
 (10, 'Creative Style Sheets', FALSE),
 (10, 'Colorful Style Sheets', FALSE),
-(17, 'Using var, let, or const keywords', TRUE),
-(17, 'Using declare keyword', FALSE),
-(17, 'Using variable keyword', FALSE),
-(17, 'Using def keyword', FALSE),
+(11, 'background-color', TRUE),
+(11, 'color', FALSE),
+(11, 'bgcolor', FALSE),
+(11, 'bg-color', FALSE),
+(12, 'margin: 0 auto;', TRUE),
+(12, 'text-align: center;', FALSE),
+(12, 'align: center;', FALSE),
+(12, 'float: center;', FALSE),
+(13, 'It consists of: margins, borders, padding, and the actual content', TRUE),
+(13, 'It is a box to put text in', FALSE),
+(13, 'It creates a checkbox', FALSE),
+(13, 'It is a layout model for headers only', FALSE),
+(14, 'font-size', TRUE),
+(14, 'text-size', FALSE),
+(14, 'font-style', FALSE),
+(14, 'text-style', FALSE),
+(15, 'Padding is inside the border, Margin is outside', TRUE),
+(15, 'Margin is inside the border, Padding is outside', FALSE),
+(15, 'There is no difference', FALSE),
+(15, 'Padding adds color, Margin adds space', FALSE);
+(16, 'var, let, const', TRUE),
+(16, 'variable myVar', FALSE),
+(16, 'v myVar', FALSE),
+(16, 'dim myVar', FALSE),
+(17, 'String, Number, Boolean, Null, Undefined, Symbol', TRUE),
+(17, 'Array, Object, Function', FALSE),
+(17, 'Integer, Float, Character', FALSE),
+(17, 'List, Map, Set', FALSE);
+(18, 'Scope and reassignment rules differ', TRUE),
+(18, 'They are exactly the same', FALSE),
+(18, 'const can be reassigned, let cannot', FALSE),
+(18, 'var is a new feature in ES6', FALSE),
+(19, 'typeof variableName', TRUE),
+(19, 'checkType(variableName)', FALSE),
+(19, 'typeOf(variableName)', FALSE),
+(19, 'dataType variableName', FALSE),
+(20, 'Automatic or implicit conversion of values from one data type to another', TRUE),
+(20, 'Forcing a variable to be a constant', FALSE),
+(20, 'Removing a variable from memory', FALSE),
+(20, 'Compiling JavaScript code', FALSE);
+(21, 'Independent and reusable bits of code that return HTML', TRUE),
+(21, 'A database table', FALSE),
+(21, 'A CSS framework', FALSE),
+(21, 'A server-side function', FALSE),
 (22, 'A reusable piece of UI', TRUE),
 (22, 'A CSS file', FALSE),
 (22, 'A database table', FALSE),
-(22, 'A JavaScript function only', FALSE);
+(22, 'A JavaScript function only', FALSE),
+(23, 'Using Props', TRUE),
+(23, 'Using State', FALSE),
+(23, 'Using Render', FALSE),
+(23, 'Using HTML attributes only', FALSE),
+(24, 'A syntax extension to JavaScript', TRUE),
+(24, 'A new programming language', FALSE),
+(24, 'A database query language', FALSE),
+(24, 'A CSS preprocessor', FALSE),
+(25, 'Functions that let you hook into React state and lifecycle features', TRUE),
+(25, 'Errors in React code', FALSE),
+(25, 'External libraries', FALSE),
+(25, 'Database connections', FALSE);
 
 -- Insert data into learnerSubmissions
+-- Note: (learnerID, submissionID) is composite primary key
 INSERT INTO learnerSubmissions (learnerID, submissionID, dateSubmitted, grade) VALUES
 (1, 1, '2024-02-07 15:30:00', 95.00),
 (1, 2, '2024-02-14 18:45:00', 88.50),
 (1, 3, '2024-02-21 20:00:00', 92.00),
 (2, 4, '2024-02-10 14:20:00', 75.00),
 (2, 5, '2024-02-17 16:30:00', NULL),
-(3, 6, '2024-03-20 19:15:00', 68.50);
+(3, 6, '2024-03-20 19:15:00', 68.50),
+-- Additional submissions for quiz performance testing
+(2, 7, '2024-02-12 10:00:00', 82.00),
+(3, 7, '2024-03-18 15:00:00', 78.00),
+(4, 8, '2024-03-22 14:00:00', 65.00),
+(4, 9, '2024-03-25 16:00:00', 72.00);
 
 -- Insert data into submissionExercises
 INSERT INTO submissionExercises (learnerID, submissionID, exerciseID, fileURL, fileName) VALUES
@@ -463,12 +541,18 @@ INSERT INTO submissionExercises (learnerID, submissionID, exerciseID, fileURL, f
 (3, 6, 1, 'https://elearning.com/submissions/sarah_portfolio.zip', 'portfolio_sarah.html');
 
 -- Insert data into submissionQuizzes
+-- Adding more quiz submissions for testing performance tracking
+-- IMPORTANT: (learnerID, submissionID) must exist in learnerSubmissions first
 INSERT INTO submissionQuizzes (submissionID, learnerID, quizID, score) VALUES
-(1, 1, 1, 95.00),
-(2, 1, 2, 88.50),
-(3, 1, 3, 92.00),
-(4, 2, 1, 75.00),
-(6, 3, 1, 68.50);
+(1, 1, 1, 95.00),   -- John - HTML Quiz - Course 1
+(2, 1, 2, 88.50),   -- John - CSS Quiz - Course 1
+(3, 1, 3, 92.00),   -- John - JS Quiz - Course 1
+(4, 2, 1, 75.00),   -- Jane - HTML Quiz - Course 1 (first attempt)
+(5, 2, 1, 82.00),   -- Jane - HTML Quiz retry - Course 1 (higher score)
+(6, 3, 1, 68.50),   -- Sarah - HTML Quiz - Course 1 (first attempt)
+(7, 3, 1, 78.00),   -- Sarah - HTML Quiz retry - Course 1 (higher score)
+(8, 4, 1, 65.00),   -- Lisa - HTML Quiz - Course 1
+(9, 4, 2, 72.00);   -- Lisa - CSS Quiz - Course 1
 
 ------- Làm tiếp ở đây --------
 ---2.1---
@@ -612,7 +696,7 @@ BEGIN
             ELSE 'False' 
         END AS IsCorrectAnswer
     FROM quizQuestions q
-    JOIN questionOptions o ON q.questionID = o.questionID
+    LEFT JOIN questionOptions o ON q.questionID = o.questionID
     WHERE q.quizID = p_quizID
     ORDER BY q.questionID ASC, o.optionID ASC;
 
@@ -665,6 +749,76 @@ BEGIN
     GROUP BY q.quizID, q.quizTitle, q.totalMarks, q.passingMarks, q.quizDuration, 
              q.assignmentID, ml.lessonID, ml.lessonTitle, cm.moduleID, cm.moduleTitle, cm.courseID
     ORDER BY cm.moduleOrder ASC, ml.lessonOrder ASC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_GetActiveLearnersInCourse$$
+CREATE PROCEDURE sp_GetActiveLearnersInCourse(
+    IN p_courseID INT,
+    IN p_enrollmentStatus VARCHAR(20)
+)
+BEGIN
+    -- Return all learners if status is 'active' (since our DB uses 'in-progress' and 'completed')
+    -- Otherwise filter by exact status match
+    IF p_enrollmentStatus = 'active' THEN
+        SELECT 
+            u.FNAME, 
+            u.LNAME, 
+            u.email, 
+            ce.enrollmentDate, 
+            ce.progressPercentage,
+            ce.status
+        FROM users u
+        JOIN learners l ON u.userID = l.userID
+        JOIN courseEnrollments ce ON l.learnerID = ce.learnerID
+        WHERE ce.courseID = p_courseID
+        ORDER BY u.LNAME ASC, u.FNAME ASC;
+    ELSE
+        SELECT 
+            u.FNAME, 
+            u.LNAME, 
+            u.email, 
+            ce.enrollmentDate, 
+            ce.progressPercentage,
+            ce.status
+        FROM users u
+        JOIN learners l ON u.userID = l.userID
+        JOIN courseEnrollments ce ON l.learnerID = ce.learnerID
+        WHERE ce.courseID = p_courseID 
+          AND ce.status = p_enrollmentStatus
+        ORDER BY u.LNAME ASC, u.FNAME ASC;
+    END IF;
+END$$
+
+-- ---------------------------------------------------------
+-- SP 2: Thỏa mãn tiêu chí "Aggregate function, GROUP BY, HAVING, WHERE, ORDER BY, Joins"
+-- Mục đích: Hiển thị học sinh và danh sách Quiz họ đã làm, lọc theo điểm số (Vd: chỉ hiện người qua môn)
+-- Liên quan đến bảng Quizzes ở phần 2.1
+-- ---------------------------------------------------------
+DROP PROCEDURE IF EXISTS sp_GetStudentQuizPerformance$$
+CREATE PROCEDURE sp_GetStudentQuizPerformance(
+    IN p_courseID INT,
+    IN p_minScore DECIMAL(5,2) -- Tham số dùng cho HAVING clause
+)
+BEGIN
+    SELECT 
+        u.username AS StudentAccount,
+        CONCAT(u.FNAME, ' ', u.LNAME) AS FullName,
+        q.quizTitle,
+        q.totalMarks AS MaxPossibleScore,
+        MAX(sq.score) AS HighestScoreObtained, -- Aggregate Function
+        COUNT(sq.submissionID) AS AttemptsCount -- Aggregate Function
+    FROM courses c
+    JOIN courseModules cm ON c.courseID = cm.courseID
+    JOIN moduleLessons ml ON cm.moduleID = ml.moduleID
+    JOIN lessonAssignments la ON ml.lessonID = la.lessonID
+    JOIN Quizzes q ON la.assignmentID = q.assignmentID
+    JOIN submissionQuizzes sq ON q.quizID = sq.quizID
+    JOIN learners l ON sq.learnerID = l.learnerID
+    JOIN users u ON l.userID = u.userID
+    WHERE c.courseID = p_courseID -- Filtering by Course
+    GROUP BY u.userID, q.quizID -- Grouping by Student and specific Quiz
+    HAVING MAX(sq.score) >= p_minScore -- Filtering aggregated result (Pass/Fail)
+    ORDER BY HighestScoreObtained DESC, u.LNAME ASC;
 END$$
 
 DELIMITER ;
