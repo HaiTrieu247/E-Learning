@@ -224,8 +224,13 @@ export default function CourseDetailPage({ params }: PageProps) {
   };
 
   // Handle edit quiz
-  const handleEditQuiz = (quiz: ModuleQuiz) => {
-    setSelectedQuiz(quiz);
+  const handleEditQuiz = (quiz: ModuleQuiz, assignmentID?: number, startDate?: string, dueDate?: string) => {
+    setSelectedQuiz({
+      ...quiz,
+      assignmentID,
+      startDate,
+      dueDate
+    });
     setIsEditModalOpen(true);
   };
 
@@ -532,7 +537,12 @@ export default function CourseDetailPage({ params }: PageProps) {
                                                     <button
                                                       onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleEditQuiz(assignment.quiz);
+                                                        handleEditQuiz(
+                                                          assignment.quiz,
+                                                          assignment.assignmentID,
+                                                          assignment.startDate,
+                                                          assignment.dueDate
+                                                        );
                                                       }}
                                                       className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors shrink-0"
                                                       title="Edit Quiz"

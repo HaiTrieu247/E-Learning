@@ -3,9 +3,10 @@ import createConnection from '@/backend/config/db.js';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const quizID = parseInt(params.id);
     const body = await request.json();
     const { quizTitle, totalMarks, passingMarks, quizDuration, startDate, dueDate, assignmentID } = body;
@@ -25,9 +26,11 @@ export async function PUT(
       );
     }
 
-    const connection = await createConnection();
-
+    let connection;
+    
     try {
+      connection = await createConnection();
+      
       // Update quiz
       await connection.execute(
         `UPDATE Quizzes 
@@ -52,6 +55,14 @@ export async function PUT(
       });
     } catch (error) {
       throw error;
+    } finally {
+      if (connection) {
+        try {
+          await connection.end();
+        } catch (e) {
+          console.error('Error closing connection:', e);
+        }
+      }
     }
   } catch (error: any) {
     console.error('Error in PUT /api/quizzes/[id]/update:', error);

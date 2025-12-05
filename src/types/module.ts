@@ -23,6 +23,9 @@ export interface ModuleQuiz {
   passingMarks: number;
   quizDuration: number;
   questionCount: number;
+  assignmentID?: number;
+  startDate?: string;
+  dueDate?: string;
 }
 
 export interface ModuleExercise {
