@@ -361,29 +361,30 @@ INSERT INTO moduleLessons (moduleID, lessonTitle, lessonOrder, lessonDuration, l
 
 -- Insert data into lessonAssignments
 INSERT INTO lessonAssignments (lessonID, startDate, dueDate) VALUES
-(1, '2024-02-01 00:00:00', '2024-02-08 23:59:59'),
-(2, '2024-02-08 00:00:00', '2024-02-15 23:59:59'),
-(3, '2024-02-15 00:00:00', '2024-02-22 23:59:59'),
-(4, '2024-02-22 00:00:00', '2024-03-01 23:59:59'),
-(5, '2024-03-01 00:00:00', '2024-03-08 23:59:59'),
-(6, '2024-03-08 00:00:00', '2024-03-15 23:59:59'),
-(7, '2024-03-15 00:00:00', '2024-03-22 23:59:59');
+(1, '2024-02-01 00:00:00', '2024-02-08 23:59:59'),   -- Assignment 1: Quiz
+(1, '2024-02-09 00:00:00', '2024-02-16 23:59:59'),   -- Assignment 2: Exercise
+(2, '2024-02-08 00:00:00', '2024-02-15 23:59:59'),   -- Assignment 3: Quiz
+(2, '2024-02-16 00:00:00', '2024-02-23 23:59:59'),   -- Assignment 4: Exercise
+(3, '2024-02-15 00:00:00', '2024-02-22 23:59:59'),   -- Assignment 5: Exercise
+(4, '2024-02-22 00:00:00', '2024-03-01 23:59:59'),   -- Assignment 6: Quiz
+(5, '2024-03-01 00:00:00', '2024-03-08 23:59:59'),   -- Assignment 7: Exercise
+(6, '2024-03-08 00:00:00', '2024-03-15 23:59:59'),   -- Assignment 8: Exercise
+(7, '2024-03-15 00:00:00', '2024-03-22 23:59:59');   -- Assignment 9: Quiz
 
--- Insert data into exercises
+-- Insert data into exercises (assignmentID 2, 4, 5, 7, 8)
 INSERT INTO exercises (assignmentID, exerciseTitle, exerciseDescription) VALUES
-(1, 'Build Your First HTML Page', 'Create a personal portfolio page using HTML. Include headings, paragraphs, images, and links.'),
-(2, 'Style a Webpage with CSS', 'Apply CSS styling to your HTML page. Use colors, fonts, layouts, and animations.'),
-(3, 'Create a Responsive Layout', 'Make your webpage responsive using media queries and flexbox/grid layouts.'),
-(4, 'JavaScript Calculator', 'Build a simple calculator that can perform basic arithmetic operations.'),
-(5, 'Interactive Form Validation', 'Create a form with client-side validation using JavaScript.'),
-(6, 'DOM Manipulation Project', 'Build a to-do list application that adds, removes, and marks tasks as complete.');
+(2, 'Build Your First HTML Page', 'Create a personal portfolio page using HTML. Include headings, paragraphs, images, and links.'),
+(4, 'Style a Webpage with CSS', 'Apply CSS styling to your HTML page. Use colors, fonts, layouts, and animations.'),
+(5, 'Create a Responsive Layout', 'Make your webpage responsive using media queries and flexbox/grid layouts.'),
+(7, 'Interactive Form Validation', 'Create a form with client-side validation using JavaScript.'),
+(8, 'DOM Manipulation Project', 'Build a to-do list application that adds, removes, and marks tasks as complete.');
 
--- Insert data into Quizzes
+-- Insert data into Quizzes (assignmentID 1, 3, 6, 9)
 INSERT INTO Quizzes (assignmentID, quizTitle, totalMarks, passingMarks, quizDuration) VALUES
 (1, 'HTML Fundamentals Quiz', 100, 70, 30),
-(2, 'CSS Basics Assessment', 100, 70, 30),
-(4, 'JavaScript Variables and Types', 100, 70, 25),
-(7, 'React Components Quiz', 100, 70, 35);
+(3, 'CSS Basics Assessment', 100, 70, 30),
+(6, 'JavaScript Variables and Types', 100, 70, 25),
+(9, 'React Components Quiz', 100, 70, 35);
 
 -- Insert data into quizQuestions
 INSERT INTO quizQuestions (quizID, questionDescription, questionScore) VALUES
@@ -450,7 +451,7 @@ INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES
 (9, '<input type="text">', TRUE),
 (9, '<textfield>', FALSE),
 (9, '<textinput>', FALSE),
-(9, '<input type="textfield">', FALSE);
+(9, '<input type="textfield">', FALSE),
 (10, 'Cascading Style Sheets', TRUE),
 (10, 'Computer Style Sheets', FALSE),
 (10, 'Creative Style Sheets', FALSE),
@@ -474,7 +475,7 @@ INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES
 (15, 'Padding is inside the border, Margin is outside', TRUE),
 (15, 'Margin is inside the border, Padding is outside', FALSE),
 (15, 'There is no difference', FALSE),
-(15, 'Padding adds color, Margin adds space', FALSE);
+(15, 'Padding adds color, Margin adds space', FALSE),
 (16, 'var, let, const', TRUE),
 (16, 'variable myVar', FALSE),
 (16, 'v myVar', FALSE),
@@ -482,7 +483,7 @@ INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES
 (17, 'String, Number, Boolean, Null, Undefined, Symbol', TRUE),
 (17, 'Array, Object, Function', FALSE),
 (17, 'Integer, Float, Character', FALSE),
-(17, 'List, Map, Set', FALSE);
+(17, 'List, Map, Set', FALSE),
 (18, 'Scope and reassignment rules differ', TRUE),
 (18, 'They are exactly the same', FALSE),
 (18, 'const can be reassigned, let cannot', FALSE),
@@ -494,7 +495,7 @@ INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES
 (20, 'Automatic or implicit conversion of values from one data type to another', TRUE),
 (20, 'Forcing a variable to be a constant', FALSE),
 (20, 'Removing a variable from memory', FALSE),
-(20, 'Compiling JavaScript code', FALSE);
+(20, 'Compiling JavaScript code', FALSE),
 (21, 'Independent and reusable bits of code that return HTML', TRUE),
 (21, 'A database table', FALSE),
 (21, 'A CSS framework', FALSE),
@@ -532,6 +533,7 @@ INSERT INTO learnerSubmissions (learnerID, submissionID, dateSubmitted, grade) V
 (4, 9, '2024-03-25 16:00:00', 72.00);
 
 -- Insert data into submissionExercises
+-- Note: exerciseID now maps to assignmentID 2, 4, 5, 7, 8
 INSERT INTO submissionExercises (learnerID, submissionID, exerciseID, fileURL, fileName) VALUES
 (1, 1, 1, 'https://elearning.com/submissions/john_html_portfolio.zip', 'portfolio.html'),
 (1, 2, 2, 'https://elearning.com/submissions/john_css_styling.zip', 'styled_portfolio.html'),
@@ -543,10 +545,11 @@ INSERT INTO submissionExercises (learnerID, submissionID, exerciseID, fileURL, f
 -- Insert data into submissionQuizzes
 -- Adding more quiz submissions for testing performance tracking
 -- IMPORTANT: (learnerID, submissionID) must exist in learnerSubmissions first
+-- Note: quizID now maps to assignmentID 1, 3, 6, 9 (Quiz IDs 1-4)
 INSERT INTO submissionQuizzes (submissionID, learnerID, quizID, score) VALUES
-(1, 1, 1, 95.00),   -- John - HTML Quiz - Course 1
-(2, 1, 2, 88.50),   -- John - CSS Quiz - Course 1
-(3, 1, 3, 92.00),   -- John - JS Quiz - Course 1
+(1, 1, 1, 95.00),   -- John - HTML Quiz (quizID 1, assignmentID 1)
+(2, 1, 2, 88.50),   -- John - CSS Quiz (quizID 2, assignmentID 3)
+(3, 1, 3, 92.00),   -- John - JS Quiz (quizID 3, assignmentID 6)
 (4, 2, 1, 75.00),   -- Jane - HTML Quiz - Course 1 (first attempt)
 (5, 2, 1, 82.00),   -- Jane - HTML Quiz retry - Course 1 (higher score)
 (6, 3, 1, 68.50),   -- Sarah - HTML Quiz - Course 1 (first attempt)

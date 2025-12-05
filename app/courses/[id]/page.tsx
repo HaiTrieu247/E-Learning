@@ -2,22 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Users, Trophy, BookOpen, Loader2, GraduationCap, Calendar, TrendingUp, Award, Target } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Loader2, GraduationCap, Calendar, ChevronDown, ChevronRight, Clock, Trophy, Play, ExternalLink, FileText, Plus, Edit2 } from 'lucide-react';
 import type { Course } from '@/src/types/course';
-import type { CourseLearner, StudentQuizPerformance } from '@/src/types/learner';
+import type { CourseLearner } from '@/src/types/learner';
+import type { CourseModule, LessonWithAssignments, ModuleQuiz } from '@/src/types/module';
+import CreateQuizModal from '@/src/components/CreateQuizModal';
+import EditQuizModal from '@/src/components/EditQuizModal';
 
 export default function CourseDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseID = searchParams.get('courseID');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'learners' | 'performance'>('overview');
+  const [activeTab, setActiveTab] = useState<'modules' | 'learners'>('modules');
   const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [learners, setLearners] = useState<CourseLearner[]>([]);
-  const [performance, setPerformance] = useState<StudentQuizPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [minScore, setMinScore] = useState<number>(0);
   const [enrollmentStatus, setEnrollmentStatus] = useState<string>('active');
+  const [expandedModule, setExpandedModule] = useState<number | null>(null);
+  const [moduleDetails, setModuleDetails] = useState<{ [key: number]: LessonWithAssignments[] }>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<{ id: number; title: string } | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<ModuleQuiz | null>(null);
 
   // Fetch course details
   useEffect(() => {
@@ -37,6 +45,180 @@ export default function CourseDetailPage() {
     fetchCourse();
   }, [courseID]);
 
+  // Fetch modules
+  useEffect(() => {
+    if (!courseID || activeTab !== 'modules') return;
+
+    const fetchModules = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`/api/courses/${courseID}/modules`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        setModules(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Error fetching modules:', error);
+        setModules([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchModules();
+  }, [courseID, activeTab]);
+
+  // Fetch module details when expanded
+  const handleModuleExpand = async (moduleID: number) => {
+    if (expandedModule === moduleID) {
+      setExpandedModule(null);
+      return;
+    }
+
+    setExpandedModule(moduleID);
+
+    // If already fetched, don't fetch again
+    if (moduleDetails[moduleID]) return;
+
+    try {
+      const res = await fetch(`/api/modules/${moduleID}/details`);
+      if (!res.ok) throw new Error('Failed to fetch module details');
+      
+      const data = await res.json();
+      setModuleDetails(prev => ({
+        ...prev,
+        [moduleID]: data
+      }));
+    } catch (error) {
+      console.error('Error fetching module details:', error);
+    }
+  };
+
+  // Handle open modal for creating quiz
+  const handleCreateQuiz = (lessonID: number, lessonTitle: string) => {
+    setSelectedLesson({ id: lessonID, title: lessonTitle });
+    setIsModalOpen(true);
+  };
+
+  // Handle modal submit
+  const handleModalSubmit = async (formData: {
+    quizTitle: string;
+    totalMarks: number;
+    passingMarks: number;
+    quizDuration: number;
+    startDate: string;
+    dueDate: string;
+  }) => {
+    if (!selectedLesson) return;
+
+    try {
+      const res = await fetch('/api/quizzes/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonID: selectedLesson.id,
+          ...formData
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create quiz');
+      }
+
+      const data = await res.json();
+      
+      // Close modal
+      setIsModalOpen(false);
+      setSelectedLesson(null);
+      
+      // Show success message
+      alert(`✅ Quiz created successfully! You can now add questions to it.`);
+      
+      // Refresh module details to show new quiz
+      if (expandedModule) {
+        const resModule = await fetch(`/api/modules/${expandedModule}/details`);
+        if (resModule.ok) {
+          const moduleData = await resModule.json();
+          setModuleDetails(prev => ({
+            ...prev,
+            [expandedModule]: moduleData
+          }));
+        }
+      }
+      
+      // Navigate to quiz page to add questions
+      if (data.quizID) {
+        const shouldNavigate = confirm('Would you like to add questions to the quiz now?');
+        if (shouldNavigate) {
+          router.push(`/quizzes/${data.quizID}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error creating quiz:', error);
+      alert('❌ ' + (error.message || 'Failed to create quiz'));
+    }
+  };
+
+  // Handle edit quiz
+  const handleEditQuiz = (quiz: ModuleQuiz) => {
+    setSelectedQuiz(quiz);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle modal edit submit
+  const handleEditModalSubmit = async (formData: {
+    quizTitle: string;
+    totalMarks: number;
+    passingMarks: number;
+    quizDuration: number;
+    startDate: string;
+    dueDate: string;
+  }) => {
+    if (!selectedQuiz) return;
+
+    try {
+      const res = await fetch(`/api/quizzes/${selectedQuiz.quizID}/update`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          assignmentID: selectedQuiz.assignmentID
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update quiz');
+      }
+
+      // Close modal
+      setIsEditModalOpen(false);
+      setSelectedQuiz(null);
+      
+      // Show success message
+      alert('✅ Quiz updated successfully!');
+      
+      // Refresh module details
+      if (expandedModule) {
+        const resModule = await fetch(`/api/modules/${expandedModule}/details`);
+        if (resModule.ok) {
+          const moduleData = await resModule.json();
+          setModuleDetails(prev => ({
+            ...prev,
+            [expandedModule]: moduleData
+          }));
+        }
+      }
+    } catch (error: any) {
+      console.error('Error updating quiz:', error);
+      alert('❌ ' + (error.message || 'Failed to update quiz'));
+    }
+  };
+
   // Fetch learners
   useEffect(() => {
     if (!courseID || activeTab !== 'learners') return;
@@ -51,9 +233,6 @@ export default function CourseDetailPage() {
         }
         
         const data = await res.json();
-        console.log('Learners data:', data);
-        
-        // Ensure data is an array
         setLearners(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching learners:', error);
@@ -65,35 +244,6 @@ export default function CourseDetailPage() {
 
     fetchLearners();
   }, [courseID, activeTab, enrollmentStatus]);
-
-  // Fetch performance
-  useEffect(() => {
-    if (!courseID || activeTab !== 'performance') return;
-
-    const fetchPerformance = async () => {
-      try {
-        setIsLoading(true);
-        const res = await fetch(`/api/courses/${courseID}/performance?minScore=${minScore}`);
-        
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
-        const data = await res.json();
-        console.log('Performance data:', data);
-        
-        // Ensure data is an array
-        setPerformance(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Error fetching performance:', error);
-        setPerformance([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPerformance();
-  }, [courseID, activeTab, minScore]);
 
   if (!courseID) {
     return (
@@ -147,15 +297,15 @@ export default function CourseDetailPage() {
         {/* Tabs */}
         <div className="glass rounded-2xl p-2 mb-6 shadow-smooth inline-flex gap-2 animate-slide-down" style={{ animationDelay: '100ms' }}>
           <button
-            onClick={() => setActiveTab('overview')}
+            onClick={() => setActiveTab('modules')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-              activeTab === 'overview'
+              activeTab === 'modules'
                 ? 'bg-linear-to-r from-indigo-600 to-purple-600 text-white shadow-smooth-lg'
                 : 'text-slate-600 hover:bg-white/50'
             }`}
           >
             <BookOpen size={18} />
-            Overview
+            Modules
           </button>
           <button
             onClick={() => setActiveTab('learners')}
@@ -168,54 +318,199 @@ export default function CourseDetailPage() {
             <Users size={18} />
             Learners
           </button>
-          <button
-            onClick={() => setActiveTab('performance')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-              activeTab === 'performance'
-                ? 'bg-linear-to-r from-indigo-600 to-purple-600 text-white shadow-smooth-lg'
-                : 'text-slate-600 hover:bg-white/50'
-            }`}
-          >
-            <Trophy size={18} />
-            Performance
-          </button>
         </div>
 
         {/* Content */}
         <div className="animate-scale-in">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="glass rounded-2xl p-8 shadow-smooth-lg">
-              <div className="text-center max-w-2xl mx-auto">
-                <BookOpen className="w-16 h-16 text-indigo-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-slate-800 mb-4">Course Overview</h2>
-                <p className="text-slate-600 mb-6">
-                  Select the Learners tab to view enrolled students or the Performance tab to see quiz statistics.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => router.push(`/quizzes/by-course?courseID=${courseID}`)}
-                    className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 group border border-indigo-200 hover:border-indigo-400"
-                  >
-                    <BookOpen className="w-10 h-10 text-indigo-600 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                    <p className="text-slate-800 font-semibold">View Quizzes</p>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('learners')}
-                    className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 group border border-emerald-200 hover:border-emerald-400"
-                  >
-                    <Users className="w-10 h-10 text-emerald-600 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                    <p className="text-slate-800 font-semibold">View Learners</p>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('performance')}
-                    className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 group border border-amber-200 hover:border-amber-400"
-                  >
-                    <Trophy className="w-10 h-10 text-amber-600 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                    <p className="text-slate-800 font-semibold">View Performance</p>
-                  </button>
+          {/* Modules Tab */}
+          {activeTab === 'modules' && (
+            <div className="glass rounded-2xl p-6 shadow-smooth-lg">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
-              </div>
+              ) : modules.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-700 mb-2">No modules found</h3>
+                  <p className="text-slate-500">This course doesn't have any modules yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {modules.map((module) => {
+                    const details = moduleDetails[module.moduleID];
+                    const isExpanded = expandedModule === module.moduleID;
+
+                    return (
+                      <div key={module.moduleID} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <button
+                          onClick={() => handleModuleExpand(module.moduleID)}
+                          className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-linear-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold">
+                              {module.moduleOrder}
+                            </div>
+                            <div className="text-left">
+                              <h3 className="font-semibold text-slate-800 text-lg">{module.moduleTitle}</h3>
+                              <div className="flex items-center gap-4 mt-1">
+                                <span className="text-sm text-slate-500 flex items-center gap-1">
+                                  <BookOpen size={14} />
+                                  {module.lessonCount} lesson{module.lessonCount !== 1 ? 's' : ''}
+                                </span>
+                                <span className="text-sm text-slate-500 flex items-center gap-1">
+                                  <Trophy size={14} />
+                                  {module.quizCount} quiz{module.quizCount !== 1 ? 'zes' : ''}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronDown className="text-slate-400" size={20} />
+                          ) : (
+                            <ChevronRight className="text-slate-400" size={20} />
+                          )}
+                        </button>
+
+                        {/* Expanded Content */}
+                        {isExpanded && (
+                          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200">
+                            {!details ? (
+                              <div className="flex items-center justify-center py-4">
+                                <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                              </div>
+                            ) : details.length === 0 ? (
+                              <div className="text-center py-8">
+                                <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                                <p className="text-slate-500 text-sm">No lessons available in this module</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                {details.map((lesson) => (
+                                  <div key={lesson.lessonID} className="space-y-2">
+                                    {/* Lesson Card */}
+                                    <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3 flex-1">
+                                          <div className="w-8 h-8 rounded bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-sm">
+                                            {lesson.lessonOrder}
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                              <Play size={14} className="text-indigo-600" />
+                                              <p className="font-medium text-slate-800">{lesson.lessonTitle}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1">
+                                              <p className="text-xs text-slate-500 flex items-center gap-1">
+                                                <Clock size={12} />
+                                                {lesson.lessonDuration} min
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            onClick={() => handleCreateQuiz(lesson.lessonID, lesson.lessonTitle)}
+                                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                            title="Create Quiz for this lesson"
+                                          >
+                                            <Plus size={18} />
+                                          </button>
+                                          <a
+                                            href={lesson.lessonMaterialURL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <ExternalLink size={18} />
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Associated Assignments (Quiz or Exercise) */}
+                                    {lesson.assignments && lesson.assignments.length > 0 && (
+                                      <div className="ml-11 space-y-2">
+                                        {lesson.assignments.map((assignment) => (
+                                          <div key={assignment.assignmentID}>
+                                            {/* Quiz Assignment */}
+                                            {assignment.quiz && (
+                                              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-400 transition-all">
+                                                <div className="flex items-start justify-between gap-3">
+                                                  <button
+                                                    onClick={() => router.push(`/quizzes/${assignment.quiz.quizID}`)}
+                                                    className="flex-1 text-left"
+                                                  >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <FileText size={14} className="text-amber-600 shrink-0" />
+                                                      <p className="font-medium text-slate-800">{assignment.quiz.quizTitle}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 flex-wrap text-xs text-slate-600">
+                                                      <span className="flex items-center gap-1">
+                                                        <Trophy size={11} />
+                                                        {assignment.quiz.questionCount} question{assignment.quiz.questionCount !== 1 ? 's' : ''}
+                                                      </span>
+                                                      <span className="text-slate-400">•</span>
+                                                      <span className="flex items-center gap-1">
+                                                        <Clock size={11} />
+                                                        {assignment.quiz.quizDuration} min
+                                                      </span>
+                                                      <span className="text-slate-400">•</span>
+                                                      <span>Pass: {assignment.quiz.passingMarks}/{assignment.quiz.totalMarks}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
+                                                      <Calendar size={11} />
+                                                      <span>
+                                                        {new Date(assignment.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(assignment.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                      </span>
+                                                    </div>
+                                                  </button>
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleEditQuiz(assignment.quiz);
+                                                    }}
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors shrink-0"
+                                                    title="Edit Quiz"
+                                                  >
+                                                    <Edit2 size={16} />
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* Exercise Assignment */}
+                                            {assignment.exercise && (
+                                              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <FileText size={14} className="text-blue-600 shrink-0" />
+                                                  <p className="font-medium text-slate-800">{assignment.exercise.exerciseTitle}</p>
+                                                </div>
+                                                <p className="text-xs text-slate-600 line-clamp-2 mb-1.5">{assignment.exercise.exerciseDescription}</p>
+                                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                  <Calendar size={11} />
+                                                  <span>
+                                                    {new Date(assignment.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(assignment.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -309,110 +604,33 @@ export default function CourseDetailPage() {
             </div>
           )}
 
-          {/* Performance Tab */}
-          {activeTab === 'performance' && (
-            <div className="glass rounded-2xl p-6 shadow-smooth-lg">
-              {/* Filter */}
-              <div className="mb-6 flex items-center gap-4">
-                <label className="text-sm font-medium text-slate-700">Minimum Score:</label>
-                <input
-                  type="number"
-                  value={minScore}
-                  onChange={(e) => setMinScore(parseFloat(e.target.value) || 0)}
-                  className="px-4 py-2 glass rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700 shadow-smooth w-32"
-                  placeholder="0"
-                  min="0"
-                  step="0.1"
-                />
-                <span className="text-sm text-slate-500">Show students with score ≥ {minScore}</span>
-              </div>
 
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                </div>
-              ) : performance.length === 0 ? (
-                <div className="text-center py-12">
-                  <Trophy className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-slate-700 mb-2">No performance data</h3>
-                  <p className="text-slate-500">No quiz submissions found with minimum score of {minScore}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4">
-                    <p className="text-sm text-slate-600">
-                      Showing <span className="font-bold text-indigo-600">{performance.length}</span> result{performance.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-slate-200">
-                          <th className="text-left py-3 px-4 font-semibold text-slate-700">Student</th>
-                          <th className="text-left py-3 px-4 font-semibold text-slate-700">Quiz</th>
-                          <th className="text-center py-3 px-4 font-semibold text-slate-700">Score</th>
-                          <th className="text-center py-3 px-4 font-semibold text-slate-700">Attempts</th>
-                          <th className="text-center py-3 px-4 font-semibold text-slate-700">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {performance.map((item, index) => {
-                          const percentage = (item.HighestScoreObtained / item.MaxPossibleScore) * 100;
-                          const isPassed = percentage >= 60; // Assuming 60% is passing
-                          
-                          return (
-                            <tr 
-                              key={index}
-                              className="border-b border-slate-100 hover:bg-white/50 transition-colors"
-                            >
-                              <td className="py-3 px-4">
-                                <div>
-                                  <p className="font-medium text-slate-800">{item.FullName}</p>
-                                  <p className="text-xs text-slate-500">@{item.StudentAccount}</p>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-slate-700">{item.quizTitle}</td>
-                              <td className="py-3 px-4">
-                                <div className="flex flex-col items-center">
-                                  <div className="flex items-center gap-2">
-                                    <Target size={16} className="text-indigo-600" />
-                                    <span className="font-semibold text-slate-800">
-                                      {item.HighestScoreObtained}/{item.MaxPossibleScore}
-                                    </span>
-                                  </div>
-                                  <span className="text-xs text-slate-500 mt-1">{percentage.toFixed(1)}%</span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center justify-center gap-2">
-                                  <TrendingUp size={16} className="text-slate-400" />
-                                  <span className="font-medium text-slate-700">{item.AttemptsCount}</span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex justify-center">
-                                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                    isPassed 
-                                      ? 'bg-green-100 text-green-700' 
-                                      : 'bg-orange-100 text-orange-700'
-                                  }`}>
-                                    <Award size={14} />
-                                    {isPassed ? 'Passed' : 'Need Improvement'}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Create Quiz Modal */}
+      <CreateQuizModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedLesson(null);
+        }}
+        lessonTitle={selectedLesson?.title || ''}
+        onSubmit={handleModalSubmit}
+      />
+
+      {/* Edit Quiz Modal */}
+      {selectedQuiz && (
+        <EditQuizModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedQuiz(null);
+          }}
+          quiz={selectedQuiz}
+          onSubmit={handleEditModalSubmit}
+        />
+      )}
     </div>
   );
 }

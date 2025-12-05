@@ -32,9 +32,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const newQuestionData = await request.json();
-    const quizID = newQuestionData.quizID || 1;
     
-    // Validate required fields
+    // Validate required fields including quizID
+    if (!newQuestionData.quizID) {
+      return NextResponse.json({ 
+        message: 'Missing required field: quizID' 
+      }, { status: 400 });
+    }
+    
     if (!newQuestionData.content || !newQuestionData.options || !newQuestionData.correctOptionId) {
       return NextResponse.json({ 
         message: 'Missing required fields: content, options, correctOptionId' 
@@ -47,6 +52,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
+    const quizID = parseInt(newQuestionData.quizID);
     const newQuestion = await quizService.addQuestion(quizID, newQuestionData);
     return NextResponse.json(newQuestion, { status: 201 });
   } catch (error: any) {
@@ -57,6 +63,13 @@ export async function POST(request: NextRequest) {
         message: 'Cannot add question: Total score would exceed quiz maximum',
         error: error.message 
       }, { status: 400 });
+    }
+    
+    if (error.message?.includes('quizID does not exist')) {
+      return NextResponse.json({ 
+        message: 'Invalid quiz ID',
+        error: error.message 
+      }, { status: 404 });
     }
     
     return NextResponse.json({ 

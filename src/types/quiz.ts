@@ -33,8 +33,21 @@ export interface Quiz {
 }
 
 // Type for creating/updating questions (used in forms and API)
-export type CreateQuestionData = Omit<Question, 'id' | 'createdAt'>;
-export type UpdateQuestionData = Partial<CreateQuestionData>;
+export interface CreateQuestionData {
+  quizID: number;
+  content: string;
+  options: Option[];
+  correctOptionId: string;
+  points: number;
+}
+
+export interface UpdateQuestionData {
+  quizID?: number;
+  content: string;
+  options: Option[];
+  correctOptionId: string;
+  points: number;
+}
 
 // Backend service types
 export interface QuizStatistics {

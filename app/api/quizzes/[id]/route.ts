@@ -92,9 +92,16 @@ export async function DELETE(request: NextRequest, { params: paramsPromise }: { 
     const params = await paramsPromise;
     console.error(`Error deleting question ${params.id}:`, error);
     
+    if (error.message?.includes('Question ID not found')) {
+      return NextResponse.json({ 
+        message: 'Question not found',
+        error: error.message 
+      }, { status: 404 });
+    }
+    
     if (error.message?.includes('Cannot delete question')) {
       return NextResponse.json({ 
-        message: 'Cannot delete question: Options exist',
+        message: 'Cannot delete question: Please try again',
         error: error.message 
       }, { status: 400 });
     }

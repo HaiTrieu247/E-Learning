@@ -1,6 +1,43 @@
 import createConnection from '../config/db.js';
 
 /**
+ * Create assignment for a lesson with specified dates
+ */
+export const createAssignment = async (lessonID, startDate, dueDate) => {
+    const connection = await createConnection();
+    try {
+        const [result] = await connection.execute(
+            'INSERT INTO lessonAssignments (lessonID, startDate, dueDate) VALUES (?, ?, ?)',
+            [lessonID, startDate, dueDate]
+        );
+
+        return result.insertId;
+    } catch (error) {
+        console.error('Error in createAssignment:', error);
+        throw error;
+    }
+};
+
+/**
+ * Create a new quiz
+ */
+export const createQuiz = async (assignmentID, quizTitle, totalMarks, passingMarks, quizDuration) => {
+    const connection = await createConnection();
+    try {
+        const [result] = await connection.execute(
+            `INSERT INTO Quizzes (assignmentID, quizTitle, totalMarks, passingMarks, quizDuration)
+             VALUES (?, ?, ?, ?, ?)`,
+            [assignmentID, quizTitle, totalMarks, passingMarks, quizDuration]
+        );
+
+        return result.insertId;
+    } catch (error) {
+        console.error('Error in createQuiz:', error);
+        throw error;
+    }
+};
+
+/**
  * Get ALL questions from ALL quizzes with their options
  * Uses sp_GetQuizDetails for each quiz
  */
@@ -185,6 +222,16 @@ export const getQuestionById = async (questionID) => {
 export const addQuestion = async (quizID, questionData) => {
     const connection = await createConnection();
     try {
+        // Validate quiz exists first
+        const [quizCheck] = await connection.query(
+            'SELECT quizID FROM Quizzes WHERE quizID = ?',
+            [quizID]
+        );
+        
+        if (quizCheck.length === 0) {
+            throw new Error('The provided quizID does not exist');
+        }
+        
         // Start transaction
         await connection.beginTransaction();
         
@@ -237,6 +284,16 @@ export const addQuestion = async (quizID, questionData) => {
 export const updateQuestion = async (questionID, questionData) => {
     const connection = await createConnection();
     try {
+        // Check if question exists first
+        const [checkQuestion] = await connection.query(
+            'SELECT questionID FROM quizQuestions WHERE questionID = ?',
+            [questionID]
+        );
+        
+        if (checkQuestion.length === 0) {
+            throw new Error('Question ID not found');
+        }
+        
         // Start transaction
         await connection.beginTransaction();
         
@@ -288,6 +345,16 @@ export const deleteQuestion = async (questionID) => {
     try {
         // Start transaction
         await connection.beginTransaction();
+        
+        // Check if question exists first
+        const [checkQuestion] = await connection.query(
+            'SELECT questionID FROM quizQuestions WHERE questionID = ?',
+            [questionID]
+        );
+        
+        if (checkQuestion.length === 0) {
+            throw new Error('Question ID not found');
+        }
         
         // First delete all options (as required by the stored procedure)
         await connection.query(
@@ -367,4 +434,17 @@ export const getQuizzesByCourse = async (courseID) => {
         console.error('Error fetching quizzes by course:', error);
         throw error;
     }
+};
+
+// Default export object
+export default {
+    createAssignment,
+    createQuiz,
+    getAllQuestions,
+    getQuizQuestions,
+    addQuestion,
+    updateQuestion,
+    deleteQuestion,
+    getQuizStatistics,
+    getQuizzesByCourse
 };

@@ -264,19 +264,25 @@ export default function QuizDetailPage() {
   }, [questions, searchTerm, sortOrder]);
   
   const handleSave = async (formData: QuestionFormData, id: number | null) => {
+    if (!quizID) {
+      showNotification("error", "Invalid quiz ID");
+      return;
+    }
+    
     setIsSaving(true);
     try {
       if (id) {
-        await updateQuestion(id, formData);
+        await updateQuestion(id, { ...formData, quizID });
         showNotification("success", "Question updated successfully!");
       } else {
-        await createQuestion(formData as any);
+        await createQuestion({ ...formData, quizID } as any);
         showNotification("success", "New question added successfully!");
       }
       resetState();
       await fetchQuestions();
-    } catch (e) {
-       showNotification("error", `Error saving question.`);
+    } catch (e: any) {
+       const errorMsg = e.message || "Error saving question";
+       showNotification("error", errorMsg);
     } finally {
       setIsSaving(false);
     }

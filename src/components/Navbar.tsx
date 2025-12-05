@@ -1,17 +1,56 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Menu, X, User, LogOut, BookOpen, Home } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Menu, X, User, LogOut, BookOpen, Home, LogIn, UserPlus } from 'lucide-react';
 
 interface NavbarProps {
-  onSearch?: (term: string) => void; // Prop để truyền dữ liệu search ra ngoài nếu cần
+  onSearch?: (term: string) => void;
+}
+
+interface UserData {
+  userID: number;
+  FNAME: string;
+  LNAME: string;
+  email: string;
+  username: string;
+  role: string;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = () => {
+      const authStatus = localStorage.getItem('isAuthenticated');
+      const userData = localStorage.getItem('user');
+      
+      if (authStatus === 'true' && userData) {
+        setIsAuthenticated(true);
+        setUser(JSON.parse(userData));
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+
+    // Check on mount
+    checkAuth();
+
+    // Listen for auth changes
+    window.addEventListener('authChange', checkAuth);
+
+    return () => {
+      window.removeEventListener('authChange', checkAuth);
+    };
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -19,6 +58,19 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
     if (onSearch) {
       onSearch(value);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+    setUser(null);
+    setIsAuthenticated(false);
+    setIsProfileOpen(false);
+    
+    // Trigger auth change event
+    window.dispatchEvent(new Event('authChange'));
+    
+    router.push('/login');
   };
 
   return (
@@ -63,39 +115,66 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
               <BookOpen size={16} /> <span>Courses</span>
             </Link>
             
-            {/* Profile Dropdown Simulation */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
-              >
-                <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-smooth">
-                  <User size={16} className="text-white" />
-                </div>
-                <span>Profile</span>
-              </button>
+            {isAuthenticated && user ? (
+              /* Profile Dropdown for Authenticated Users */
+              <div className="relative">
+                <button 
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="w-7 h-7 bg-linear-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-smooth">
+                    <User size={16} className="text-white" />
+                  </div>
+                  <span>{user.FNAME}</span>
+                </button>
 
-              {/* Dropdown Menu */}
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-56 glass rounded-2xl shadow-smooth-lg py-2 animate-slide-down overflow-hidden border border-slate-200/50">
-                  <div className="px-4 py-3 border-b border-slate-200/50 bg-gradient-to-r from-indigo-50 to-purple-50">
-                    <p className="text-sm text-slate-900 font-bold">Instructor Name</p>
-                    <p className="text-xs text-slate-600 mt-0.5">instructor@bktutor.com</p>
+                {/* Dropdown Menu */}
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-3 w-56 glass rounded-2xl shadow-smooth-lg py-2 animate-slide-down overflow-hidden border border-slate-200/50">
+                    <div className="px-4 py-3 border-b border-slate-200/50 bg-linear-to-r from-indigo-50 to-purple-50">
+                      <p className="text-sm text-slate-900 font-bold">{user.FNAME} {user.LNAME}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{user.email}</p>
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-semibold text-indigo-600">
+                        {user.role}
+                      </span>
+                    </div>
+                    <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                      My Profile
+                    </Link>
+                    <Link href="/settings" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                      Settings
+                    </Link>
+                    <div className="border-t border-slate-200/50 mt-1">
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium flex items-center gap-2"
+                      >
+                        <LogOut size={16} />
+                        Sign out
+                      </button>
+                    </div>
                   </div>
-                  <Link href="/profile" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                    My Profile
-                  </Link>
-                  <Link href="/settings" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                    Settings
-                  </Link>
-                  <div className="border-t border-slate-200/50 mt-1">
-                    <button className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
-                      Sign out
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              /* Login/Register Buttons for Guests */
+              <>
+                <Link 
+                  href="/login" 
+                  className="text-sm font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2"
+                >
+                  <LogIn size={16} />
+                  <span>Login</span>
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="text-sm font-medium text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-sm"
+                >
+                  <UserPlus size={16} />
+                  <span>Register</span>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -131,14 +210,38 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             <Link href="/courses" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
               <BookOpen size={18} /> Courses
             </Link>
-            <Link href="/profile" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
-              <User size={18} /> Profile
-            </Link>
-            <div className="border-t border-slate-200 mt-3 pt-3">
-               <button className="flex items-center gap-2 w-full px-4 py-2.5 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all">
-                 <LogOut size={18} /> Sign Out
-               </button>
-            </div>
+            
+            {isAuthenticated && user ? (
+              <>
+                <div className="px-4 py-3 bg-slate-50 rounded-xl">
+                  <p className="text-sm font-bold text-slate-800">{user.FNAME} {user.LNAME}</p>
+                  <p className="text-xs text-slate-600">{user.email}</p>
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-semibold text-indigo-600">
+                    {user.role}
+                  </span>
+                </div>
+                <Link href="/profile" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
+                  <User size={18} /> Profile
+                </Link>
+                <div className="border-t border-slate-200 mt-3 pt-3">
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all"
+                  >
+                    <LogOut size={18} /> Sign Out
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
+                  <LogIn size={18} /> Login
+                </Link>
+                <Link href="/register" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all">
+                  <UserPlus size={18} /> Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
