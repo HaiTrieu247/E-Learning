@@ -2,8 +2,9 @@ import { createConnection } from '../config/db.js';
 
 export class CourseService {
     async getAllCourses() {
+        let connection;
         try {
-            const connection = await createConnection();
+            connection = await createConnection();
             const [rows] = await connection.execute(`
                 SELECT 
                     c.courseID, 
@@ -18,12 +19,21 @@ export class CourseService {
         } catch (error) {
             console.error("Error fetching courses:", error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error("Error closing connection:", e);
+                }
+            }
         }
     }
 
     async getCourseById(courseId) {
+        let connection;
         try {
-            const connection = await createConnection();
+            connection = await createConnection();
             const [rows] = await connection.execute(
                 `SELECT 
                     c.courseID, 
@@ -40,12 +50,21 @@ export class CourseService {
         } catch (error) {
             console.error("Error fetching course:", error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error("Error closing connection:", e);
+                }
+            }
         }
     }
 
     async getCoursesByCategory(categoryId) {
+        let connection;
         try {
-            const connection = await createConnection();
+            connection = await createConnection();
             const [rows] = await connection.execute(
                 `SELECT 
                     c.courseID, 
@@ -62,6 +81,14 @@ export class CourseService {
         } catch (error) {
             console.error("Error fetching courses by category:", error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error("Error closing connection:", e);
+                }
+            }
         }
     }
 }

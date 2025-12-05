@@ -205,6 +205,7 @@ export default function QuizDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [canEditQuiz, setCanEditQuiz] = useState(false);
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -237,6 +238,36 @@ export default function QuizDetailPage() {
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
+
+  // Check instructor permission
+  useEffect(() => {
+    const checkInstructorAccess = async () => {
+      if (!quizID) return;
+      
+      try {
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+          setCanEditQuiz(false);
+          return;
+        }
+
+        const user = JSON.parse(userData);
+        const res = await fetch(`/api/quizzes/${quizID}/check-instructor?userID=${user.userID}`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          setCanEditQuiz(data.canEdit || false);
+        } else {
+          setCanEditQuiz(false);
+        }
+      } catch (error) {
+        console.error('Error checking instructor access:', error);
+        setCanEditQuiz(false);
+      }
+    };
+
+    checkInstructorAccess();
+  }, [quizID]);
 
   const showNotification = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
@@ -334,12 +365,14 @@ export default function QuizDetailPage() {
                     <h1 className="text-3xl font-bold text-slate-800">Quiz Questions</h1>
                     <p className="text-sm text-slate-500 mt-1">Quiz ID: {quizID}</p>
                     </div>
-                    <button 
-                    onClick={() => { setIsAdding(!isAdding); setEditingId(null); setDeletingId(null); }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95"
-                    >
-                    {isAdding ? <><X size={18}/> Cancel</> : <><Plus size={18} /> Add Question</>}
-                    </button>
+                    {canEditQuiz && (
+                      <button 
+                      onClick={() => { setIsAdding(!isAdding); setEditingId(null); setDeletingId(null); }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95"
+                      >
+                      {isAdding ? <><X size={18}/> Cancel</> : <><Plus size={18} /> Add Question</>}
+                      </button>
+                    )}
                 </div>
 
                 <div className="bg-white/80 p-4 rounded-xl border border-slate-200/80 soft-shadow">
@@ -379,12 +412,14 @@ export default function QuizDetailPage() {
                 <div className="text-center py-24 text-slate-500 bg-white rounded-2xl soft-shadow">
                     <h3 className="font-bold text-xl text-slate-700">No Questions Found</h3>
                     <p className="text-sm mt-2">There are no questions matching your criteria. <br/> Why not add a new one?</p>
-                    <button 
-                        onClick={() => setIsAdding(true)}
-                        className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95 mx-auto"
-                    >
-                        <Plus size={18} /> Add Question
-                    </button>
+                    {canEditQuiz && (
+                      <button 
+                          onClick={() => setIsAdding(true)}
+                          className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-95 mx-auto"
+                      >
+                          <Plus size={18} /> Add Question
+                      </button>
+                    )}
                 </div>
             ) : (
             filteredQuestions.map((q, index) => (
@@ -401,8 +436,9 @@ export default function QuizDetailPage() {
                     <QuestionCard 
                         question={q}
                         index={index}
-                        onEdit={() => { setEditingId(q.id); setDeletingId(null); setIsAdding(false); }}
-                        onDelete={() => { setDeletingId(q.id); setEditingId(null); setIsAdding(false); }}
+                        onEdit={canEditQuiz ? () => { setEditingId(q.id); setDeletingId(null); setIsAdding(false); } : undefined}
+                        onDelete={canEditQuiz ? () => { setDeletingId(q.id); setEditingId(null); setIsAdding(false); } : undefined}
+                        showCorrectAnswer={canEditQuiz}
                     />
                 )}
                 

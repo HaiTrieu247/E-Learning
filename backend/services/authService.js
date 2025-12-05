@@ -6,9 +6,9 @@ export class AuthService {
      * Register a new user
      */
     async register(userData) {
-        const connection = await createConnection();
-        
+        let connection;
         try {
+            connection = await createConnection();
             await connection.beginTransaction();
 
             // Check if username or email already exists
@@ -76,9 +76,17 @@ export class AuthService {
 
             return newUser[0];
         } catch (error) {
-            await connection.rollback();
+            if (connection) await connection.rollback();
             console.error('Error in register:', error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 
@@ -86,9 +94,10 @@ export class AuthService {
      * Login user
      */
     async login(username, password) {
-        const connection = await createConnection();
-        
+        let connection;
         try {
+            connection = await createConnection();
+            
             // Get user by username
             const [users] = await connection.execute(
                 'SELECT userID, FNAME, LNAME, email, username, password_hashed, role, phoneNumber FROM users WHERE username = ?',
@@ -115,6 +124,14 @@ export class AuthService {
         } catch (error) {
             console.error('Error in login:', error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 
@@ -122,9 +139,10 @@ export class AuthService {
      * Get user by ID
      */
     async getUserById(userID) {
-        const connection = await createConnection();
-        
+        let connection;
         try {
+            connection = await createConnection();
+            
             const [users] = await connection.execute(
                 'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber FROM users WHERE userID = ?',
                 [userID]
@@ -134,6 +152,14 @@ export class AuthService {
         } catch (error) {
             console.error('Error in getUserById:', error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 
@@ -141,9 +167,10 @@ export class AuthService {
      * Update user profile
      */
     async updateProfile(userID, updates) {
-        const connection = await createConnection();
-        
+        let connection;
         try {
+            connection = await createConnection();
+            
             const allowedFields = ['FNAME', 'LNAME', 'email', 'phoneNumber'];
             const updateFields = [];
             const values = [];
@@ -170,6 +197,14 @@ export class AuthService {
         } catch (error) {
             console.error('Error in updateProfile:', error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 
@@ -177,9 +212,10 @@ export class AuthService {
      * Change password
      */
     async changePassword(userID, currentPassword, newPassword) {
-        const connection = await createConnection();
-        
+        let connection;
         try {
+            connection = await createConnection();
+            
             // Get current password hash
             const [users] = await connection.execute(
                 'SELECT password_hashed FROM users WHERE userID = ?',
@@ -210,6 +246,14 @@ export class AuthService {
         } catch (error) {
             console.error('Error in changePassword:', error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 }

@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createConnection } from '@/backend/config/db';
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
+  const courseID = params.id;
+  const { searchParams } = new URL(request.url);
+  const userID = searchParams.get('userID');
+
+  console.log('🔍 API Called - courseID:', courseID, 'userID:', userID);
+
+  if (!userID) {
+    console.log('❌ No userID provided');
+    return NextResponse.json({ canEdit: false });
+  }
+
+  if (!courseID) {
+    console.log('❌ No courseID found');
+    return NextResponse.json({ canEdit: false });
+  }
+
+  let connection;
+  let canEdit = false;
+  
+  try {
+    connection = await createConnection();
+
+    // First get instructorID from userID
+    const [instructorRows] = await connection.execute(
+      `SELECT instructorID FROM instructors WHERE userID = ?`,
+      [userID]
+    );
+
+    console.log('🔍 Query 1 - instructors table:', instructorRows);
+
+    if (!Array.isArray(instructorRows) || instructorRows.length === 0) {
+      console.log('❌ No instructor found for userID:', userID);
+      canEdit = false;
+    } else {
+      const instructorID = (instructorRows[0] as any).instructorID;
+      console.log('✅ Found instructorID:', instructorID);
+
+      // Check if this instructor is assigned to this course
+      const [rows] = await connection.execute(
+        `SELECT instructorID 
+         FROM courseDesignments 
+         WHERE courseID = ? AND instructorID = ?`,
+        [courseID, instructorID]
+      );
+
+      console.log('🔍 Query 2 - courseDesignments table:', rows);
+      console.log('🔍 Query 2 params:', { courseID, instructorID, courseIDType: typeof courseID, instructorIDType: typeof instructorID });
+
+      canEdit = Array.isArray(rows) && rows.length > 0;
+      console.log('✅ Final canEdit:', canEdit);
+    }
+  } catch (error: any) {
+    console.error('Error checking instructor access:', error.message);
+    canEdit = false;
+  } finally {
+    // Always close connection in finally block
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (e) {
+        // Ignore connection close error
+      }
+    }
+  }
+  
+  return NextResponse.json({ canEdit });
+}

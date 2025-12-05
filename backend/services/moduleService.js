@@ -2,8 +2,9 @@ import { createConnection } from '../config/db.js';
 
 export class ModuleService {
     async getModulesByCourse(courseId) {
+        let connection;
         try {
-            const connection = await createConnection();
+            connection = await createConnection();
             const [rows] = await connection.execute(`
                 SELECT 
                     cm.moduleID,
@@ -24,12 +25,21 @@ export class ModuleService {
         } catch (error) {
             console.error("Error fetching modules:", error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 
     async getModuleDetails(moduleId) {
+        let connection;
         try {
-            const connection = await createConnection();
+            connection = await createConnection();
             
             // Get all lessons with their assignments (quiz + exercise)
             const [lessons] = await connection.execute(`
@@ -118,6 +128,14 @@ export class ModuleService {
         } catch (error) {
             console.error("Error fetching module details:", error);
             throw error;
+        } finally {
+            if (connection) {
+                try {
+                    await connection.end();
+                } catch (e) {
+                    console.error('Error closing connection:', e);
+                }
+            }
         }
     }
 }

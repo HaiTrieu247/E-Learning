@@ -9,10 +9,18 @@ import type { CourseModule, LessonWithAssignments, ModuleQuiz } from '@/src/type
 import CreateQuizModal from '@/src/components/CreateQuizModal';
 import EditQuizModal from '@/src/components/EditQuizModal';
 
-export default function CourseDetailPage() {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function CourseDetailPage({ params }: PageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseID = searchParams.get('courseID');
+  
+  // Support both routing methods: /courses/1 OR /courses/1?courseID=1
+  const courseID = searchParams.get('courseID') || params.id;
 
   const [activeTab, setActiveTab] = useState<'modules' | 'learners'>('modules');
   const [course, setCourse] = useState<Course | null>(null);
@@ -26,6 +34,7 @@ export default function CourseDetailPage() {
   const [selectedLesson, setSelectedLesson] = useState<{ id: number; title: string } | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<ModuleQuiz | null>(null);
+  const [canEditCourse, setCanEditCourse] = useState(false);
 
   // Fetch course details
   useEffect(() => {
@@ -43,6 +52,57 @@ export default function CourseDetailPage() {
     };
 
     fetchCourse();
+  }, [courseID]);
+
+  // Check if current user is assigned instructor for this course
+  useEffect(() => {
+    if (!courseID) return;
+
+    const abortController = new AbortController();
+
+    const checkInstructorAccess = async () => {
+      try {
+        // Get current user from localStorage (key is 'user' not 'currentUser')
+        const userData = localStorage.getItem('user');
+        
+        if (!userData) {
+          setCanEditCourse(false);
+          return;
+        }
+
+        const user = JSON.parse(userData);
+        
+        // Check if user is instructor and assigned to this course
+        const res = await fetch(`/api/courses/${courseID}/check-instructor?userID=${user.userID}`, {
+          signal: abortController.signal
+        });
+        
+        if (!res.ok) {
+          console.log('❌ API returned error:', res.status);
+          setCanEditCourse(false);
+          return;
+        }
+        
+        const data = await res.json();
+        console.log('✅ API Response:', data);
+        console.log('✅ Setting canEditCourse to:', data.canEdit);
+        setCanEditCourse(data.canEdit || false);
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          // Request was cancelled, ignore
+          return;
+        }
+        console.error('Error checking instructor access:', error);
+        setCanEditCourse(false);
+      }
+    };
+
+    checkInstructorAccess();
+
+    // Cleanup: cancel request if component unmounts or courseID changes
+    return () => {
+      abortController.abort();
+    };
   }, [courseID]);
 
   // Fetch modules
@@ -409,13 +469,15 @@ export default function CourseDetailPage() {
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <button
-                                            onClick={() => handleCreateQuiz(lesson.lessonID, lesson.lessonTitle)}
-                                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                            title="Create Quiz for this lesson"
-                                          >
-                                            <Plus size={18} />
-                                          </button>
+                                          {canEditCourse && (
+                                            <button
+                                              onClick={() => handleCreateQuiz(lesson.lessonID, lesson.lessonTitle)}
+                                              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                              title="Create Quiz for this lesson"
+                                            >
+                                              <Plus size={18} />
+                                            </button>
+                                          )}
                                           <a
                                             href={lesson.lessonMaterialURL}
                                             target="_blank"
@@ -466,16 +528,18 @@ export default function CourseDetailPage() {
                                                       </span>
                                                     </div>
                                                   </button>
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      handleEditQuiz(assignment.quiz);
-                                                    }}
-                                                    className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors shrink-0"
-                                                    title="Edit Quiz"
-                                                  >
-                                                    <Edit2 size={16} />
-                                                  </button>
+                                                  {canEditCourse && (
+                                                    <button
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditQuiz(assignment.quiz);
+                                                      }}
+                                                      className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors shrink-0"
+                                                      title="Edit Quiz"
+                                                    >
+                                                      <Edit2 size={16} />
+                                                    </button>
+                                                  )}
                                                 </div>
                                               </div>
                                             )}

@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createConnection } from '@/backend/config/db.js';
 
 export async function GET() {
+    let connection;
     try {
-        const connection = await createConnection();
+        connection = await createConnection();
         const [rows] = await connection.execute(`
             SELECT 
                 categoryID, 
@@ -19,5 +20,13 @@ export async function GET() {
             { error: "Internal Server Error" }, 
             { status: 500 }
         );
+    } finally {
+        if (connection) {
+            try {
+                await connection.end();
+            } catch (e) {
+                console.error("Error closing connection:", e);
+            }
+        }
     }
 }

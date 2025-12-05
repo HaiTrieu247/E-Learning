@@ -27,13 +27,21 @@ export default function CoursesPage() {
           fetch('/api/categories')
         ]);
         
-        const coursesData = await coursesRes.json();
-        const categoriesData = await categoriesRes.json();
-        
-        setCourses(coursesData);
-        setCategories(categoriesData);
+        if (coursesRes.ok && categoriesRes.ok) {
+          const coursesData = await coursesRes.json();
+          const categoriesData = await categoriesRes.json();
+          
+          setCourses(Array.isArray(coursesData) ? coursesData : []);
+          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        } else {
+          console.error('API Error:', coursesRes.status, categoriesRes.status);
+          setCourses([]);
+          setCategories([]);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
+        setCourses([]);
+        setCategories([]);
       } finally {
         setIsLoading(false);
       }
