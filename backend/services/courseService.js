@@ -11,7 +11,11 @@ export class CourseService {
                     c.courseTitle, 
                     c.courseDescription, 
                     c.categoryID,
-                    cc.categoryName
+                    cc.categoryName,
+                    c.approvalStatus,
+                    c.courseStatus,
+                    c.createdDate,
+                    c.lastModified
                 FROM courses c
                 LEFT JOIN course_categories cc ON c.categoryID = cc.categoryID
             `);
@@ -40,7 +44,11 @@ export class CourseService {
                     c.courseTitle, 
                     c.courseDescription, 
                     c.categoryID,
-                    cc.categoryName
+                    cc.categoryName,
+                    c.approvalStatus,
+                    c.courseStatus,
+                    c.createdDate,
+                    c.lastModified
                 FROM courses c
                 LEFT JOIN course_categories cc ON c.categoryID = cc.categoryID
                 WHERE c.courseID = ?`,
@@ -71,7 +79,11 @@ export class CourseService {
                     c.courseTitle, 
                     c.courseDescription, 
                     c.categoryID,
-                    cc.categoryName
+                    cc.categoryName,
+                    c.approvalStatus,
+                    c.courseStatus,
+                    c.createdDate,
+                    c.lastModified
                 FROM courses c
                 LEFT JOIN course_categories cc ON c.categoryID = cc.categoryID
                 WHERE c.categoryID = ?`,

@@ -24,19 +24,11 @@ export class AuthService {
             // Hash password
             const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-            // Create manageObject first
-            const [objectResult] = await connection.execute(
-                `INSERT INTO manageObjects (objectType, objectApprovalStatus, createdDate, objectStatus) 
-                 VALUES ('user', 'approved', CURDATE(), 'active')`
-            );
-            const objectID = objectResult.insertId;
-
-            // Insert user
+            // Insert user with embedded approval/status fields
             const [userResult] = await connection.execute(
-                `INSERT INTO users (objectID, FNAME, LNAME, phoneNumber, email, username, password_hashed, role) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                `INSERT INTO users (FNAME, LNAME, phoneNumber, email, username, password_hashed, role, approvalStatus, accountStatus, createdDate) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', 'active', CURRENT_TIMESTAMP)`,
                 [
-                    objectID,
                     userData.firstName,
                     userData.lastName,
                     userData.phoneNumber,
@@ -70,7 +62,7 @@ export class AuthService {
 
             // Return user without password
             const [newUser] = await connection.execute(
-                'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber FROM users WHERE userID = ?',
+                'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber, approvalStatus, accountStatus, createdDate FROM users WHERE userID = ?',
                 [userID]
             );
 
@@ -100,7 +92,7 @@ export class AuthService {
             
             // Get user by username
             const [users] = await connection.execute(
-                'SELECT userID, FNAME, LNAME, email, username, password_hashed, role, phoneNumber FROM users WHERE username = ?',
+                'SELECT userID, FNAME, LNAME, email, username, password_hashed, role, phoneNumber, approvalStatus, accountStatus FROM users WHERE username = ?',
                 [username]
             );
 
@@ -109,6 +101,15 @@ export class AuthService {
             }
 
             const user = users[0];
+
+            // Check if account is approved and active
+            if (user.approvalStatus !== 'approved') {
+                throw new Error('Account is not approved yet');
+            }
+
+            if (user.accountStatus !== 'active') {
+                throw new Error('Account is inactive or suspended');
+            }
 
             // Verify password
             const isPasswordValid = await bcrypt.compare(password, user.password_hashed);
@@ -144,7 +145,7 @@ export class AuthService {
             connection = await createConnection();
             
             const [users] = await connection.execute(
-                'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber FROM users WHERE userID = ?',
+                'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber, approvalStatus, accountStatus, createdDate FROM users WHERE userID = ?',
                 [userID]
             );
 

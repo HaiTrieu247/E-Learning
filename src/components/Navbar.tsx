@@ -114,6 +114,11 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             <Link href="/courses" className="text-sm font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2">
               <BookOpen size={16} /> <span>Courses</span>
             </Link>
+            {isAuthenticated && user?.role === 'admin' && (
+              <Link href="/admin/users" className="text-sm font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2">
+                <User size={16} /> <span>Admin</span>
+              </Link>
+            )}
             
             {isAuthenticated && user ? (
               /* Profile Dropdown for Authenticated Users */
@@ -210,6 +215,16 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             <Link href="/courses" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
               <BookOpen size={18} /> Courses
             </Link>
+            {isAuthenticated && user?.role === 'admin' && (
+              <>
+                <Link href="/admin/users" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
+                  <User size={18} /> Manage Users
+                </Link>
+                <Link href="/admin/courses" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">
+                  <BookOpen size={18} /> Manage Courses
+                </Link>
+              </>
+            )}
             
             {isAuthenticated && user ? (
               <>

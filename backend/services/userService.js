@@ -6,7 +6,9 @@ export class UserService {
         try {
             connection = await createConnection();
             const [rows] = await connection.execute(
-                `SELECT u.*, 
+                `SELECT u.userID, u.FNAME, u.LNAME, u.phoneNumber, u.email, 
+                        u.username, u.role, u.approvalStatus, u.accountStatus, 
+                        u.createdDate,
                         i.instructorID, 
                         l.learnerID, 
                         a.adminID 
@@ -35,7 +37,9 @@ export class UserService {
         try {
             connection = await createConnection();
             const [rows] = await connection.execute(
-                `SELECT u.*, 
+                `SELECT u.userID, u.FNAME, u.LNAME, u.phoneNumber, u.email, 
+                        u.username, u.role, u.approvalStatus, u.accountStatus, 
+                        u.createdDate,
                         i.instructorID, 
                         l.learnerID, 
                         a.adminID 
