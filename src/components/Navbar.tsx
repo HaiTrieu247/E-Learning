@@ -10,12 +10,11 @@ interface NavbarProps {
 }
 
 interface UserData {
-  userID: number;
-  FNAME: string;
-  LNAME: string;
-  email: string;
-  username: string;
-  role: string;
+  UserID: number;
+  FullName: string;
+  Email: string;
+  Role: string;
+  phoneNumber?: string;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
@@ -125,17 +124,17 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
                   <div className="w-7 h-7 bg-linear-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-smooth">
                     <User size={16} className="text-white" />
                   </div>
-                  <span>{user.FNAME}</span>
+                  <span>{user.FullName.split(' ')[0]}</span>
                 </button>
 
                 {/* Dropdown Menu */}
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-3 w-56 glass rounded-2xl shadow-smooth-lg py-2 animate-slide-down overflow-hidden border border-slate-200/50">
                     <div className="px-4 py-3 border-b border-slate-200/50 bg-linear-to-r from-indigo-50 to-purple-50">
-                      <p className="text-sm text-slate-900 font-bold">{user.FNAME} {user.LNAME}</p>
-                      <p className="text-xs text-slate-600 mt-0.5">{user.email}</p>
+                      <p className="text-sm text-slate-900 font-bold">{user.FullName}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{user.Email}</p>
                       <span className="inline-block mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-semibold text-indigo-600">
-                        {user.role}
+                        {user.Role}
                       </span>
                     </div>
                     <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
@@ -214,10 +213,10 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             {isAuthenticated && user ? (
               <>
                 <div className="px-4 py-3 bg-slate-50 rounded-xl">
-                  <p className="text-sm font-bold text-slate-800">{user.FNAME} {user.LNAME}</p>
-                  <p className="text-xs text-slate-600">{user.email}</p>
+                  <p className="text-sm font-bold text-slate-800">{user.FullName}</p>
+                  <p className="text-xs text-slate-600">{user.Email}</p>
                   <span className="inline-block mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-semibold text-indigo-600">
-                    {user.role}
+                    {user.Role}
                   </span>
                 </div>
                 <Link href="/profile" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition-all">

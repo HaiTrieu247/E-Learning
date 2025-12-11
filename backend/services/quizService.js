@@ -7,9 +7,27 @@ import createConnection from '../config/db.js';
 export const createAssignment = async (title, courseID, moduleID, lessonID, startDate, dueDate) => {
     const connection = await createConnection();
     try {
+        // If courseID or moduleID is not provided, fetch from lesson
+        let finalCourseID = courseID;
+        let finalModuleID = moduleID;
+        
+        if (!finalCourseID || !finalModuleID) {
+            const [lessonRows] = await connection.execute(
+                'SELECT CourseID, ModuleID FROM Lesson WHERE LessonID = ?',
+                [lessonID]
+            );
+            
+            if (lessonRows.length === 0) {
+                throw new Error('Lesson not found');
+            }
+            
+            finalCourseID = lessonRows[0].CourseID;
+            finalModuleID = lessonRows[0].ModuleID;
+        }
+        
         const [result] = await connection.execute(
             'INSERT INTO Assignment (startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES (?, ?, ?, ?, ?, ?)',
-            [startDate, dueDate, title, courseID, moduleID, lessonID]
+            [startDate, dueDate, title, finalCourseID, finalModuleID, lessonID]
         );
 
         return result.insertId;
@@ -355,44 +373,23 @@ export const updateQuestion = async (questionID, questionData) => {
  * Delete a question
  * Uses sp_DeleteQuestion stored procedure from create_table.sql (section 2.1)
  * 
- * Note: The stored procedure requires that all options be deleted first
- * to ensure data integrity. We handle this automatically.
+ * Note: The stored procedure handles all cascading deletes:
+ * - Deletes Answer records that reference this question's options
+ * - Deletes Option_Table records for this question
+ * - Deletes the Question itself
  */
 export const deleteQuestion = async (questionID) => {
     const connection = await createConnection();
     try {
-        // Start transaction
-        await connection.beginTransaction();
-        
-        // Check if question exists first
-        const [checkQuestion] = await connection.query(
-            'SELECT questionID FROM Question WHERE questionID = ?',
-            [questionID]
-        );
-        
-        if (checkQuestion.length === 0) {
-            throw new Error('Question ID not found');
-        }
-        
-        // First delete all options from Option_Table (as required by the stored procedure)
-        await connection.query(
-            'DELETE FROM Option_Table WHERE questionID = ?',
-            [questionID]
-        );
-        
-        // Then call stored procedure sp_DeleteQuestion
+        // Call stored procedure sp_DeleteQuestion
+        // It handles all cascading deletes automatically
         await connection.query(
             'CALL sp_DeleteQuestion(?)',
             [questionID]
         );
         
-        // Commit transaction
-        await connection.commit();
-        
         return true;
     } catch (error) {
-        // Rollback on error
-        await connection.rollback();
         console.error('Error deleting question:', error);
         throw error;
     }

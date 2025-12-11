@@ -1,8 +1,8 @@
 -- Create USER table (Top-level parent table)
 CREATE TABLE USER (
-    UserID INT PRIMARY KEY,
+    UserID INT AUTO_INCREMENT PRIMARY KEY,
     FullName VARCHAR(255),
-    DateCreated DATETIME,
+    username VARCHAR(100) UNIQUE,
     phoneNumber VARCHAR(20),
     Email VARCHAR(255),
     Password_hash VARCHAR(255),
@@ -44,7 +44,7 @@ CREATE TABLE MANAGE (
 
 -- Create Category table first (since Course table depends on it)
 CREATE TABLE Course_category (
-    CategoryID INT PRIMARY KEY,
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(255),
     Parent_ID INT,
     -- Recursive foreign key
@@ -53,11 +53,11 @@ CREATE TABLE Course_category (
 
 -- Create Course table
 CREATE TABLE Course (
-    CourseID INT PRIMARY KEY,
+    CourseID INT AUTO_INCREMENT PRIMARY KEY,
     CTitle VARCHAR(255),
-    Created_date DATETIME,
+    Created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     Description TEXT,
-    Status VARCHAR(50),
+    Status VARCHAR(50) DEFAULT 'active',
     CategoryID INT NOT NULL, -- NOT NULL because of total participation in ERD
     -- Foreign key linking to category
     FOREIGN KEY (CategoryID) REFERENCES Course_category(CategoryID)
@@ -95,7 +95,7 @@ CREATE TABLE ACCESS (
 
 -- Module Table
 CREATE TABLE Module (
-    ModuleID INT PRIMARY KEY,
+    ModuleID INT AUTO_INCREMENT PRIMARY KEY,
     Title VARCHAR(255),
     Order_Num INT, -- "Order" is a keyword, so use Order_Num or enclose it in `Order`
     CourseID INT,
@@ -104,7 +104,7 @@ CREATE TABLE Module (
 
 -- Lesson Table
 CREATE TABLE Lesson (
-    LessonID INT PRIMARY KEY,
+    LessonID INT AUTO_INCREMENT PRIMARY KEY,
     Title VARCHAR(255),
     Order_Num INT,
     Duration INT, -- Assuming in minutes
@@ -116,7 +116,7 @@ CREATE TABLE Lesson (
 
 -- Material Table
 CREATE TABLE Material (
-    materialID INT PRIMARY KEY,
+    materialID INT AUTO_INCREMENT PRIMARY KEY,
     materialName VARCHAR(255),
     materialURL VARCHAR(500),
     LessonID INT,
@@ -129,7 +129,7 @@ CREATE TABLE Material (
 
 -- Assignment Table (General exercises)
 CREATE TABLE Assignment (
-    AssignmentID INT PRIMARY KEY,
+    AssignmentID INT AUTO_INCREMENT PRIMARY KEY,
     startDate DATETIME,
     dueDate DATETIME,
     title VARCHAR(255),
@@ -143,7 +143,7 @@ CREATE TABLE Assignment (
 
 -- Exercise Table (Inherits from or details of Assignment)
 CREATE TABLE Exercise (
-    ExerciseID INT PRIMARY KEY,
+    ExerciseID INT AUTO_INCREMENT PRIMARY KEY,
     Title VARCHAR(255),
     Description TEXT,
     AssignmentID INT,
@@ -152,7 +152,7 @@ CREATE TABLE Exercise (
 
 -- Quiz Table (Inherits from or details of Assignment)
 CREATE TABLE Quiz (
-    quizID INT PRIMARY KEY,
+    quizID INT AUTO_INCREMENT PRIMARY KEY,
     Passing_Score FLOAT,
     Duration INT,
     totalScore FLOAT,
@@ -162,7 +162,7 @@ CREATE TABLE Quiz (
 
 -- Question Table
 CREATE TABLE Question (
-    questionID INT PRIMARY KEY,
+    questionID INT AUTO_INCREMENT PRIMARY KEY,
     qText TEXT,
     score FLOAT,
     quizID INT,
@@ -173,7 +173,7 @@ CREATE TABLE Question (
 
 -- Option Table (Choices for questions)
 CREATE TABLE Option_Table ( -- "Option" is often a keyword, add a suffix to be safe
-    optionID INT PRIMARY KEY,
+    optionID INT AUTO_INCREMENT PRIMARY KEY,
     oText TEXT,
     is_correct BOOLEAN, -- Or BIT
     questionID INT,
@@ -186,8 +186,8 @@ CREATE TABLE Option_Table ( -- "Option" is often a keyword, add a suffix to be s
 
 -- Submission Table (Submitting work)
 CREATE TABLE Submission (
-    SubmissionID INT PRIMARY KEY,
-    Time DATETIME,
+    SubmissionID INT AUTO_INCREMENT PRIMARY KEY,
+    Time DATETIME DEFAULT CURRENT_TIMESTAMP,
     Grade FLOAT,
     AssignmentID INT,
     Learner_UserID INT,
@@ -197,7 +197,7 @@ CREATE TABLE Submission (
 
 -- Answer Table (Detailed answers from learners)
 CREATE TABLE Answer (
-    AnswerID INT PRIMARY KEY,
+    AnswerID INT AUTO_INCREMENT PRIMARY KEY,
     optionID INT,
     questionID INT,
     Learner_UserID INT,
@@ -212,7 +212,7 @@ CREATE TABLE Answer (
 
 -- File Table (Attached documents for Exercise or Submission)
 CREATE TABLE File (
-    FileID INT PRIMARY KEY,
+    FileID INT AUTO_INCREMENT PRIMARY KEY,
     fileName VARCHAR(255),
     fileURL VARCHAR(500),
     ExerciseID INT,
@@ -288,16 +288,16 @@ END$$
 
 DELIMITER ;
 
--- Insert data into USER
-INSERT INTO USER (UserID, FullName, DateCreated, phoneNumber, Email, Password_hash, Role) VALUES
-(1, 'John Doe', '2024-01-15 08:00:00', '0901234567', 'john.doe@email.com', '$2y$10$abcdefghijklmnopqrstuvwxyz123456', 'learner'),
-(2, 'Jane Smith', '2024-01-20 09:00:00', '0902345678', 'jane.smith@email.com', '$2y$10$bcdefghijklmnopqrstuvwxyz1234567', 'learner'),
-(3, 'Michael Johnson', '2024-02-01 10:00:00', '0903456789', 'michael.j@email.com', '$2y$10$cdefghijklmnopqrstuvwxyz12345678', 'instructor'),
-(4, 'Emily Brown', '2024-02-10 11:00:00', '0904567890', 'emily.brown@email.com', '$2y$10$defghijklmnopqrstuvwxyz123456789', 'instructor'),
-(5, 'David Wilson', '2024-02-15 12:00:00', '0905678901', 'david.wilson@email.com', '$2y$10$efghijklmnopqrstuvwxyz1234567890', 'admin'),
-(6, 'Sarah Taylor', '2024-03-01 13:00:00', '0906789012', 'sarah.taylor@email.com', '$2y$10$fghijklmnopqrstuvwxyz12345678901', 'learner'),
-(7, 'Robert Martinez', '2024-03-05 14:00:00', '0907890123', 'robert.m@email.com', '$2y$10$ghijklmnopqrstuvwxyz123456789012', 'instructor'),
-(8, 'Lisa Anderson', '2024-03-10 15:00:00', '0908901234', 'lisa.anderson@email.com', '$2y$10$hijklmnopqrstuvwxyz1234567890123', 'learner');
+-- Insert data into USER (UserID will be auto-incremented)
+INSERT INTO USER (FullName, username, phoneNumber, Email, Password_hash, Role) VALUES
+('John Doe', 'johndoe', '0901234567', 'john.doe@email.com', '$2y$10$abcdefghijklmnopqrstuvwxyz123456', 'learner'),
+('Jane Smith', 'janesmith', '0902345678', 'jane.smith@email.com', '$2y$10$bcdefghijklmnopqrstuvwxyz1234567', 'learner'),
+('Michael Johnson', 'michaelj', '0903456789', 'michael.j@email.com', '$2y$10$cdefghijklmnopqrstuvwxyz12345678', 'instructor'),
+('Emily Brown', 'emilybrown', '0904567890', 'emily.brown@email.com', '$2y$10$defghijklmnopqrstuvwxyz123456789', 'instructor'),
+('David Wilson', 'davidwilson', '0905678901', 'david.wilson@email.com', '$2y$10$efghijklmnopqrstuvwxyz1234567890', 'admin'),
+('Sarah Taylor', 'sarahtaylor', '0906789012', 'sarah.taylor@email.com', '$2y$10$fghijklmnopqrstuvwxyz12345678901', 'learner'),
+('Robert Martinez', 'robertm', '0907890123', 'robert.m@email.com', '$2y$10$ghijklmnopqrstuvwxyz123456789012', 'instructor'),
+('Lisa Anderson', 'lisaanderson', '0908901234', 'lisa.anderson@email.com', '$2y$10$hijklmnopqrstuvwxyz1234567890123', 'learner');
 
 -- Insert data into LEARNER
 INSERT INTO LEARNER (UserID, Birthday) VALUES
@@ -316,24 +316,24 @@ INSERT INTO INSTRUCTOR (UserID, Bio, Specialization) VALUES
 INSERT INTO ADMIN (UserID, adminID, accessLevel) VALUES
 (5, 1, 3);
 
--- Insert data into Course_category
-INSERT INTO Course_category (CategoryID, Name, Parent_ID) VALUES
-(1, 'Programming', NULL),
-(2, 'Data Science', NULL),
-(3, 'Mobile Development', NULL),
-(4, 'Web Development', 1),
-(5, 'Backend Development', 1),
-(6, 'Machine Learning', 2),
-(7, 'iOS Development', 3),
-(8, 'Android Development', 3);
+-- Insert data into Course_category (CategoryID will be auto-incremented)
+INSERT INTO Course_category (Name, Parent_ID) VALUES
+('Programming', NULL),
+('Data Science', NULL),
+('Mobile Development', NULL),
+('Web Development', 1),
+('Backend Development', 1),
+('Machine Learning', 2),
+('iOS Development', 3),
+('Android Development', 3);
 
--- Insert data into Course
-INSERT INTO Course (CourseID, CTitle, Created_date, Description, Status, CategoryID) VALUES
-(1, 'Complete Web Development Bootcamp', '2024-01-10 09:00:00', 'Master modern web development with HTML, CSS, JavaScript, React, Node.js, and MongoDB. Build real-world projects and deploy them.', 'active', 4),
-(2, 'Python for Data Science', '2024-01-25 10:00:00', 'Learn Python programming and data analysis libraries like NumPy, Pandas, and Matplotlib. Perfect for aspiring data scientists.', 'active', 6),
-(3, 'iOS App Development with Swift', '2024-02-05 11:00:00', 'Build beautiful iOS applications using Swift and SwiftUI. From basics to App Store deployment.', 'active', 7),
-(4, 'React.js Mastery', '2024-02-15 12:00:00', 'Deep dive into React.js, including hooks, context API, Redux, and advanced patterns for building scalable applications.', 'active', 4),
-(5, 'Machine Learning Fundamentals', '2024-03-01 13:00:00', 'Introduction to machine learning algorithms, supervised and unsupervised learning, and practical implementations.', 'active', 6);
+-- Insert data into Course (CourseID will be auto-incremented)
+INSERT INTO Course (CTitle, Created_date, Description, Status, CategoryID) VALUES
+('Complete Web Development Bootcamp', '2024-01-10 09:00:00', 'Master modern web development with HTML, CSS, JavaScript, React, Node.js, and MongoDB. Build real-world projects and deploy them.', 'active', 4),
+('Python for Data Science', '2024-01-25 10:00:00', 'Learn Python programming and data analysis libraries like NumPy, Pandas, and Matplotlib. Perfect for aspiring data scientists.', 'active', 6),
+('iOS App Development with Swift', '2024-02-05 11:00:00', 'Build beautiful iOS applications using Swift and SwiftUI. From basics to App Store deployment.', 'active', 7),
+('React.js Mastery', '2024-02-15 12:00:00', 'Deep dive into React.js, including hooks, context API, Redux, and advanced patterns for building scalable applications.', 'active', 4),
+('Machine Learning Fundamentals', '2024-03-01 13:00:00', 'Introduction to machine learning algorithms, supervised and unsupervised learning, and practical implementations.', 'active', 6);
 
 -- Insert data into MANAGE
 INSERT INTO MANAGE (Admin_UserID, Target_UserID, accessLevel, dataModify, actionType) VALUES
@@ -370,278 +370,278 @@ INSERT INTO ACCESS (Admin_UserID, Course_CourseID) VALUES
 (5, 5);
 
 -- Insert data into Module
-INSERT INTO Module (ModuleID, Title, Order_Num, CourseID) VALUES
-(1, 'HTML & CSS Fundamentals', 1, 1),
-(2, 'JavaScript Essentials', 2, 1),
-(3, 'React.js Introduction', 3, 1),
-(4, 'Backend with Node.js', 4, 1),
-(5, 'Python Basics', 1, 2),
-(6, 'Data Manipulation with Pandas', 2, 2),
-(7, 'Data Visualization', 3, 2),
-(8, 'Swift Programming', 1, 3),
-(9, 'UIKit Fundamentals', 2, 3),
-(10, 'SwiftUI and Modern iOS', 3, 3);
+INSERT INTO Module (Title, Order_Num, CourseID) VALUES
+('HTML & CSS Fundamentals', 1, 1),
+('JavaScript Essentials', 2, 1),
+('React.js Introduction', 3, 1),
+('Backend with Node.js', 4, 1),
+('Python Basics', 1, 2),
+('Data Manipulation with Pandas', 2, 2),
+('Data Visualization', 3, 2),
+('Swift Programming', 1, 3),
+('UIKit Fundamentals', 2, 3),
+('SwiftUI and Modern iOS', 3, 3);
 
 -- Insert data into Lesson
-INSERT INTO Lesson (LessonID, Title, Order_Num, Duration, CourseID, ModuleID) VALUES
-(1, 'Introduction to HTML', 1, 45, 1, 1),
-(2, 'CSS Styling Basics', 2, 60, 1, 1),
-(3, 'Responsive Web Design', 3, 75, 1, 1),
-(4, 'Variables and Data Types', 1, 50, 1, 2),
-(5, 'Functions and Scope', 2, 55, 1, 2),
-(6, 'DOM Manipulation', 3, 70, 1, 2),
-(7, 'React Components', 1, 65, 1, 3),
-(8, 'State and Props', 2, 60, 1, 3),
-(9, 'Python Installation and Setup', 1, 30, 2, 5),
-(10, 'Python Syntax and Variables', 2, 45, 2, 5);
+INSERT INTO Lesson (Title, Order_Num, Duration, CourseID, ModuleID) VALUES
+('Introduction to HTML', 1, 45, 1, 1),
+('CSS Styling Basics', 2, 60, 1, 1),
+('Responsive Web Design', 3, 75, 1, 1),
+('Variables and Data Types', 1, 50, 1, 2),
+('Functions and Scope', 2, 55, 1, 2),
+('DOM Manipulation', 3, 70, 1, 2),
+('React Components', 1, 65, 1, 3),
+('State and Props', 2, 60, 1, 3),
+('Python Installation and Setup', 1, 30, 2, 5),
+('Python Syntax and Variables', 2, 45, 2, 5);
 
 -- Insert data into Material
-INSERT INTO Material (materialID, materialName, materialURL, LessonID, CourseID, ModuleID) VALUES
-(1, 'HTML Introduction Video', 'https://elearning.com/materials/html-intro.mp4', 1, 1, 1),
-(2, 'CSS Basics Video', 'https://elearning.com/materials/css-basics.mp4', 2, 1, 1),
-(3, 'Responsive Design Guide', 'https://elearning.com/materials/responsive-design.mp4', 3, 1, 1),
-(4, 'JavaScript Variables Tutorial', 'https://elearning.com/materials/js-variables.mp4', 4, 1, 2),
-(5, 'JavaScript Functions Guide', 'https://elearning.com/materials/js-functions.mp4', 5, 1, 2),
-(6, 'DOM Manipulation Workshop', 'https://elearning.com/materials/js-dom.mp4', 6, 1, 2),
-(7, 'React Components Lecture', 'https://elearning.com/materials/react-components.mp4', 7, 1, 3),
-(8, 'React State Management', 'https://elearning.com/materials/react-state.mp4', 8, 1, 3),
-(9, 'Python Setup Guide', 'https://elearning.com/materials/python-setup.mp4', 9, 2, 5),
-(10, 'Python Syntax Overview', 'https://elearning.com/materials/python-syntax.mp4', 10, 2, 5);
+INSERT INTO Material (materialName, materialURL, LessonID, CourseID, ModuleID) VALUES
+('HTML Introduction Video', 'https://elearning.com/materials/html-intro.mp4', 1, 1, 1),
+('CSS Basics Video', 'https://elearning.com/materials/css-basics.mp4', 2, 1, 1),
+('Responsive Design Guide', 'https://elearning.com/materials/responsive-design.mp4', 3, 1, 1),
+('JavaScript Variables Tutorial', 'https://elearning.com/materials/js-variables.mp4', 4, 1, 2),
+('JavaScript Functions Guide', 'https://elearning.com/materials/js-functions.mp4', 5, 1, 2),
+('DOM Manipulation Workshop', 'https://elearning.com/materials/js-dom.mp4', 6, 1, 2),
+('React Components Lecture', 'https://elearning.com/materials/react-components.mp4', 7, 1, 3),
+('React State Management', 'https://elearning.com/materials/react-state.mp4', 8, 1, 3),
+('Python Setup Guide', 'https://elearning.com/materials/python-setup.mp4', 9, 2, 5),
+('Python Syntax Overview', 'https://elearning.com/materials/python-syntax.mp4', 10, 2, 5);
 
 -- Insert data into Assignment
-INSERT INTO Assignment (AssignmentID, startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES
-(1, '2024-02-01 00:00:00', '2024-02-08 23:59:59', 'HTML Fundamentals Quiz', 1, 1, 1),
-(2, '2024-02-09 00:00:00', '2024-02-16 23:59:59', 'Build Your First HTML Page', 1, 1, 1),
-(3, '2024-02-08 00:00:00', '2024-02-15 23:59:59', 'CSS Basics Assessment', 1, 1, 2),
-(4, '2024-02-16 00:00:00', '2024-02-23 23:59:59', 'Style a Webpage with CSS', 1, 1, 2),
-(5, '2024-02-15 00:00:00', '2024-02-22 23:59:59', 'Create a Responsive Layout', 1, 1, 3),
-(6, '2024-02-22 00:00:00', '2024-03-01 23:59:59', 'JavaScript Variables and Types', 1, 2, 4),
-(7, '2024-03-01 00:00:00', '2024-03-08 23:59:59', 'Interactive Form Validation', 1, 2, 5),
-(8, '2024-03-08 00:00:00', '2024-03-15 23:59:59', 'DOM Manipulation Project', 1, 2, 6),
-(9, '2024-03-15 00:00:00', '2024-03-22 23:59:59', 'React Components Quiz', 1, 3, 7);
+INSERT INTO Assignment (startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES
+('2024-02-01 00:00:00', '2024-02-08 23:59:59', 'HTML Fundamentals Quiz', 1, 1, 1),
+('2024-02-09 00:00:00', '2024-02-16 23:59:59', 'Build Your First HTML Page', 1, 1, 1),
+('2024-02-08 00:00:00', '2024-02-15 23:59:59', 'CSS Basics Assessment', 1, 1, 2),
+('2024-02-16 00:00:00', '2024-02-23 23:59:59', 'Style a Webpage with CSS', 1, 1, 2),
+('2024-02-15 00:00:00', '2024-02-22 23:59:59', 'Create a Responsive Layout', 1, 1, 3),
+('2024-02-22 00:00:00', '2024-03-01 23:59:59', 'JavaScript Variables and Types', 1, 2, 4),
+('2024-03-01 00:00:00', '2024-03-08 23:59:59', 'Interactive Form Validation', 1, 2, 5),
+('2024-03-08 00:00:00', '2024-03-15 23:59:59', 'DOM Manipulation Project', 1, 2, 6),
+('2024-03-15 00:00:00', '2024-03-22 23:59:59', 'React Components Quiz', 1, 3, 7);
 
 -- Insert data into Exercise
-INSERT INTO Exercise (ExerciseID, Title, Description, AssignmentID) VALUES
-(1, 'Build Your First HTML Page', 'Create a personal portfolio page using HTML. Include headings, paragraphs, images, and links.', 2),
-(2, 'Style a Webpage with CSS', 'Apply CSS styling to your HTML page. Use colors, fonts, layouts, and animations.', 4),
-(3, 'Create a Responsive Layout', 'Make your webpage responsive using media queries and flexbox/grid layouts.', 5),
-(4, 'Interactive Form Validation', 'Create a form with client-side validation using JavaScript.', 7),
-(5, 'DOM Manipulation Project', 'Build a to-do list application that adds, removes, and marks tasks as complete.', 8);
+INSERT INTO Exercise (Title, Description, AssignmentID) VALUES
+('Build Your First HTML Page', 'Create a personal portfolio page using HTML. Include headings, paragraphs, images, and links.', 2),
+('Style a Webpage with CSS', 'Apply CSS styling to your HTML page. Use colors, fonts, layouts, and animations.', 4),
+('Create a Responsive Layout', 'Make your webpage responsive using media queries and flexbox/grid layouts.', 5),
+('Interactive Form Validation', 'Create a form with client-side validation using JavaScript.', 7),
+('DOM Manipulation Project', 'Build a to-do list application that adds, removes, and marks tasks as complete.', 8);
 
 -- Insert data into Quiz
-INSERT INTO Quiz (quizID, Passing_Score, Duration, totalScore, AssignmentID) VALUES
-(1, 70, 30, 100, 1),
-(2, 70, 30, 100, 3),
-(3, 70, 25, 100, 6),
-(4, 70, 35, 100, 9);
+INSERT INTO Quiz (Passing_Score, Duration, totalScore, AssignmentID) VALUES
+(70, 30, 100, 1),
+(70, 30, 100, 3),
+(70, 25, 100, 6),
+(70, 35, 100, 9);
 
 -- Insert data into Question
-INSERT INTO Question (questionID, qText, score, quizID, AssignmentID) VALUES
+INSERT INTO Question (qText, score, quizID, AssignmentID) VALUES
 -- Quiz 1 questions
-(1, 'What does HTML stand for?', 10, 1, 1),
-(2, 'Which tag is used to create a hyperlink?', 10, 1, 1),
-(3, 'What is the purpose of the <head> tag?', 15, 1, 1),
-(4, 'How do you create a numbered list in HTML?', 15, 1, 1),
-(5, 'What attribute specifies an alternative text for an image?', 10, 1, 1),
-(6, 'Which HTML element defines the title of a document?', 10, 1, 1),
-(7, 'What is the correct HTML element for the largest heading?', 10, 1, 1),
-(8, 'How can you make a text bold in HTML?', 10, 1, 1),
-(9, 'What is the correct HTML for creating a text input field?', 10, 1, 1),
+('What does HTML stand for?', 10, 1, 1),
+('Which tag is used to create a hyperlink?', 10, 1, 1),
+('What is the purpose of the <head> tag?', 15, 1, 1),
+('How do you create a numbered list in HTML?', 15, 1, 1),
+('What attribute specifies an alternative text for an image?', 10, 1, 1),
+('Which HTML element defines the title of a document?', 10, 1, 1),
+('What is the correct HTML element for the largest heading?', 10, 1, 1),
+('How can you make a text bold in HTML?', 10, 1, 1),
+('What is the correct HTML for creating a text input field?', 10, 1, 1),
 -- Quiz 2 questions
-(10, 'What does CSS stand for?', 10, 2, 3),
-(11, 'Which property is used to change the background color?', 15, 2, 3),
-(12, 'How do you center a block element horizontally?', 20, 2, 3),
-(13, 'What is the CSS box model?', 25, 2, 3),
-(14, 'Which property is used to change the font size?', 15, 2, 3),
-(15, 'What is the difference between padding and margin?', 15, 2, 3),
+('What does CSS stand for?', 10, 2, 3),
+('Which property is used to change the background color?', 15, 2, 3),
+('How do you center a block element horizontally?', 20, 2, 3),
+('What is the CSS box model?', 25, 2, 3),
+('Which property is used to change the font size?', 15, 2, 3),
+('What is the difference between padding and margin?', 15, 2, 3),
 -- Quiz 3 questions
-(16, 'How do you declare a variable in JavaScript?', 15, 3, 6),
-(17, 'What are the primitive data types in JavaScript?', 20, 3, 6),
-(18, 'What is the difference between let, const, and var?', 25, 3, 6),
-(19, 'How do you check the type of a variable?', 20, 3, 6),
-(20, 'What is type coercion in JavaScript?', 20, 3, 6),
+('How do you declare a variable in JavaScript?', 15, 3, 6),
+('What are the primitive data types in JavaScript?', 20, 3, 6),
+('What is the difference between let, const, and var?', 25, 3, 6),
+('How do you check the type of a variable?', 20, 3, 6),
+('What is type coercion in JavaScript?', 20, 3, 6),
 -- Quiz 4 questions
-(21, 'What is a React component?', 20, 4, 9),
-(22, 'What is the difference between functional and class components?', 25, 4, 9),
-(23, 'How do you pass data to a component?', 20, 4, 9),
-(24, 'What is JSX?', 15, 4, 9),
-(25, 'What are React Hooks?', 20, 4, 9);
+('What is a React component?', 20, 4, 9),
+('What is the difference between functional and class components?', 25, 4, 9),
+('How do you pass data to a component?', 20, 4, 9),
+('What is JSX?', 15, 4, 9),
+('What are React Hooks?', 20, 4, 9);
 
 -- Insert data into Option_Table
-INSERT INTO Option_Table (optionID, oText, is_correct, questionID, quizID, AssignmentID) VALUES
+INSERT INTO Option_Table (oText, is_correct, questionID, quizID, AssignmentID) VALUES
 -- Question 1 options
-(1, 'Hyper Text Markup Language', TRUE, 1, 1, 1),
-(2, 'High Tech Modern Language', FALSE, 1, 1, 1),
-(3, 'Home Tool Markup Language', FALSE, 1, 1, 1),
-(4, 'Hyperlinks and Text Markup Language', FALSE, 1, 1, 1),
+('Hyper Text Markup Language', TRUE, 1, 1, 1),
+('High Tech Modern Language', FALSE, 1, 1, 1),
+('Home Tool Markup Language', FALSE, 1, 1, 1),
+('Hyperlinks and Text Markup Language', FALSE, 1, 1, 1),
 -- Question 2 options
-(5, '<a>', TRUE, 2, 1, 1),
-(6, '<link>', FALSE, 2, 1, 1),
-(7, '<href>', FALSE, 2, 1, 1),
-(8, '<hyperlink>', FALSE, 2, 1, 1),
+('<a>', TRUE, 2, 1, 1),
+('<link>', FALSE, 2, 1, 1),
+('<href>', FALSE, 2, 1, 1),
+('<hyperlink>', FALSE, 2, 1, 1),
 -- Question 3 options
-(9, 'Contains metadata about the document', TRUE, 3, 1, 1),
-(10, 'Contains the main content', FALSE, 3, 1, 1),
-(11, 'Defines the footer', FALSE, 3, 1, 1),
-(12, 'Creates a heading', FALSE, 3, 1, 1),
+('Contains metadata about the document', TRUE, 3, 1, 1),
+('Contains the main content', FALSE, 3, 1, 1),
+('Defines the footer', FALSE, 3, 1, 1),
+('Creates a heading', FALSE, 3, 1, 1),
 -- Question 4 options
-(13, 'Using <ol> tag', TRUE, 4, 1, 1),
-(14, 'Using <ul> tag', FALSE, 4, 1, 1),
-(15, 'Using <list> tag', FALSE, 4, 1, 1),
-(16, 'Using <nl> tag', FALSE, 4, 1, 1),
+('Using <ol> tag', TRUE, 4, 1, 1),
+('Using <ul> tag', FALSE, 4, 1, 1),
+('Using <list> tag', FALSE, 4, 1, 1),
+('Using <nl> tag', FALSE, 4, 1, 1),
 -- Question 5 options
-(17, 'alt', TRUE, 5, 1, 1),
-(18, 'title', FALSE, 5, 1, 1),
-(19, 'src', FALSE, 5, 1, 1),
-(20, 'alternative', FALSE, 5, 1, 1),
+('alt', TRUE, 5, 1, 1),
+('title', FALSE, 5, 1, 1),
+('src', FALSE, 5, 1, 1),
+('alternative', FALSE, 5, 1, 1),
 -- Question 6 options
-(21, '<title>', TRUE, 6, 1, 1),
-(22, '<meta>', FALSE, 6, 1, 1),
-(23, '<head>', FALSE, 6, 1, 1),
-(24, '<body>', FALSE, 6, 1, 1),
+('<title>', TRUE, 6, 1, 1),
+('<meta>', FALSE, 6, 1, 1),
+('<head>', FALSE, 6, 1, 1),
+('<body>', FALSE, 6, 1, 1),
 -- Question 7 options
-(25, '<h1>', TRUE, 7, 1, 1),
-(26, '<h6>', FALSE, 7, 1, 1),
-(27, '<head>', FALSE, 7, 1, 1),
-(28, '<heading>', FALSE, 7, 1, 1),
+('<h1>', TRUE, 7, 1, 1),
+('<h6>', FALSE, 7, 1, 1),
+('<head>', FALSE, 7, 1, 1),
+('<heading>', FALSE, 7, 1, 1),
 -- Question 8 options
-(29, '<b>', TRUE, 8, 1, 1),
-(30, '<bold>', FALSE, 8, 1, 1),
-(31, '<bb>', FALSE, 8, 1, 1),
-(32, '<fat>', FALSE, 8, 1, 1),
+('<b>', TRUE, 8, 1, 1),
+('<bold>', FALSE, 8, 1, 1),
+('<bb>', FALSE, 8, 1, 1),
+('<fat>', FALSE, 8, 1, 1),
 -- Question 9 options
-(33, '<input type="text">', TRUE, 9, 1, 1),
-(34, '<textfield>', FALSE, 9, 1, 1),
-(35, '<textinput>', FALSE, 9, 1, 1),
-(36, '<input type="textfield">', FALSE, 9, 1, 1),
+('<input type="text">', TRUE, 9, 1, 1),
+('<textfield>', FALSE, 9, 1, 1),
+('<textinput>', FALSE, 9, 1, 1),
+('<input type="textfield">', FALSE, 9, 1, 1),
 -- Question 10 options
-(37, 'Cascading Style Sheets', TRUE, 10, 2, 3),
-(38, 'Computer Style Sheets', FALSE, 10, 2, 3),
-(39, 'Creative Style Sheets', FALSE, 10, 2, 3),
-(40, 'Colorful Style Sheets', FALSE, 10, 2, 3),
+('Cascading Style Sheets', TRUE, 10, 2, 3),
+('Computer Style Sheets', FALSE, 10, 2, 3),
+('Creative Style Sheets', FALSE, 10, 2, 3),
+('Colorful Style Sheets', FALSE, 10, 2, 3),
 -- Question 11 options
-(41, 'background-color', TRUE, 11, 2, 3),
-(42, 'color', FALSE, 11, 2, 3),
-(43, 'bgcolor', FALSE, 11, 2, 3),
-(44, 'bg-color', FALSE, 11, 2, 3),
+('background-color', TRUE, 11, 2, 3),
+('color', FALSE, 11, 2, 3),
+('bgcolor', FALSE, 11, 2, 3),
+('bg-color', FALSE, 11, 2, 3),
 -- Question 12 options
-(45, 'margin: 0 auto;', TRUE, 12, 2, 3),
-(46, 'text-align: center;', FALSE, 12, 2, 3),
-(47, 'align: center;', FALSE, 12, 2, 3),
-(48, 'float: center;', FALSE, 12, 2, 3),
+('margin: 0 auto;', TRUE, 12, 2, 3),
+('text-align: center;', FALSE, 12, 2, 3),
+('align: center;', FALSE, 12, 2, 3),
+('float: center;', FALSE, 12, 2, 3),
 -- Question 13 options
-(49, 'It consists of: margins, borders, padding, and the actual content', TRUE, 13, 2, 3),
-(50, 'It is a box to put text in', FALSE, 13, 2, 3),
-(51, 'It creates a checkbox', FALSE, 13, 2, 3),
-(52, 'It is a layout model for headers only', FALSE, 13, 2, 3),
+('It consists of: margins, borders, padding, and the actual content', TRUE, 13, 2, 3),
+('It is a box to put text in', FALSE, 13, 2, 3),
+('It creates a checkbox', FALSE, 13, 2, 3),
+('It is a layout model for headers only', FALSE, 13, 2, 3),
 -- Question 14 options
-(53, 'font-size', TRUE, 14, 2, 3),
-(54, 'text-size', FALSE, 14, 2, 3),
-(55, 'font-style', FALSE, 14, 2, 3),
-(56, 'text-style', FALSE, 14, 2, 3),
+('font-size', TRUE, 14, 2, 3),
+('text-size', FALSE, 14, 2, 3),
+('font-style', FALSE, 14, 2, 3),
+('text-style', FALSE, 14, 2, 3),
 -- Question 15 options
-(57, 'Padding is inside the border, Margin is outside', TRUE, 15, 2, 3),
-(58, 'Margin is inside the border, Padding is outside', FALSE, 15, 2, 3),
-(59, 'There is no difference', FALSE, 15, 2, 3),
-(60, 'Padding adds color, Margin adds space', FALSE, 15, 2, 3),
+('Padding is inside the border, Margin is outside', TRUE, 15, 2, 3),
+('Margin is inside the border, Padding is outside', FALSE, 15, 2, 3),
+('There is no difference', FALSE, 15, 2, 3),
+('Padding adds color, Margin adds space', FALSE, 15, 2, 3),
 -- Question 16 options
-(61, 'var, let, const', TRUE, 16, 3, 6),
-(62, 'variable myVar', FALSE, 16, 3, 6),
-(63, 'v myVar', FALSE, 16, 3, 6),
-(64, 'dim myVar', FALSE, 16, 3, 6),
+('var, let, const', TRUE, 16, 3, 6),
+('variable myVar', FALSE, 16, 3, 6),
+('v myVar', FALSE, 16, 3, 6),
+('dim myVar', FALSE, 16, 3, 6),
 -- Question 17 options
-(65, 'String, Number, Boolean, Null, Undefined, Symbol', TRUE, 17, 3, 6),
-(66, 'Array, Object, Function', FALSE, 17, 3, 6),
-(67, 'Integer, Float, Character', FALSE, 17, 3, 6),
-(68, 'List, Map, Set', FALSE, 17, 3, 6),
+('String, Number, Boolean, Null, Undefined, Symbol', TRUE, 17, 3, 6),
+('Array, Object, Function', FALSE, 17, 3, 6),
+('Integer, Float, Character', FALSE, 17, 3, 6),
+('List, Map, Set', FALSE, 17, 3, 6),
 -- Question 18 options
-(69, 'Scope and reassignment rules differ', TRUE, 18, 3, 6),
-(70, 'They are exactly the same', FALSE, 18, 3, 6),
-(71, 'const can be reassigned, let cannot', FALSE, 18, 3, 6),
-(72, 'var is a new feature in ES6', FALSE, 18, 3, 6),
+('Scope and reassignment rules differ', TRUE, 18, 3, 6),
+('They are exactly the same', FALSE, 18, 3, 6),
+('const can be reassigned, let cannot', FALSE, 18, 3, 6),
+('var is a new feature in ES6', FALSE, 18, 3, 6),
 -- Question 19 options
-(73, 'typeof variableName', TRUE, 19, 3, 6),
-(74, 'checkType(variableName)', FALSE, 19, 3, 6),
-(75, 'typeOf(variableName)', FALSE, 19, 3, 6),
-(76, 'dataType variableName', FALSE, 19, 3, 6),
+('typeof variableName', TRUE, 19, 3, 6),
+('checkType(variableName)', FALSE, 19, 3, 6),
+('typeOf(variableName)', FALSE, 19, 3, 6),
+('dataType variableName', FALSE, 19, 3, 6),
 -- Question 20 options
-(77, 'Automatic or implicit conversion of values from one data type to another', TRUE, 20, 3, 6),
-(78, 'Forcing a variable to be a constant', FALSE, 20, 3, 6),
-(79, 'Removing a variable from memory', FALSE, 20, 3, 6),
-(80, 'Compiling JavaScript code', FALSE, 20, 3, 6),
+('Automatic or implicit conversion of values from one data type to another', TRUE, 20, 3, 6),
+('Forcing a variable to be a constant', FALSE, 20, 3, 6),
+('Removing a variable from memory', FALSE, 20, 3, 6),
+('Compiling JavaScript code', FALSE, 20, 3, 6),
 -- Question 21 options
-(81, 'Independent and reusable bits of code that return HTML', TRUE, 21, 4, 9),
-(82, 'A database table', FALSE, 21, 4, 9),
-(83, 'A CSS framework', FALSE, 21, 4, 9),
-(84, 'A server-side function', FALSE, 21, 4, 9),
+('Independent and reusable bits of code that return HTML', TRUE, 21, 4, 9),
+('A database table', FALSE, 21, 4, 9),
+('A CSS framework', FALSE, 21, 4, 9),
+('A server-side function', FALSE, 21, 4, 9),
 -- Question 22 options
-(85, 'A reusable piece of UI', TRUE, 22, 4, 9),
-(86, 'A CSS file', FALSE, 22, 4, 9),
-(87, 'A database table', FALSE, 22, 4, 9),
-(88, 'A JavaScript function only', FALSE, 22, 4, 9),
+('A reusable piece of UI', TRUE, 22, 4, 9),
+('A CSS file', FALSE, 22, 4, 9),
+('A database table', FALSE, 22, 4, 9),
+('A JavaScript function only', FALSE, 22, 4, 9),
 -- Question 23 options
-(89, 'Using Props', TRUE, 23, 4, 9),
-(90, 'Using State', FALSE, 23, 4, 9),
-(91, 'Using Render', FALSE, 23, 4, 9),
-(92, 'Using HTML attributes only', FALSE, 23, 4, 9),
+('Using Props', TRUE, 23, 4, 9),
+('Using State', FALSE, 23, 4, 9),
+('Using Render', FALSE, 23, 4, 9),
+('Using HTML attributes only', FALSE, 23, 4, 9),
 -- Question 24 options
-(93, 'A syntax extension to JavaScript', TRUE, 24, 4, 9),
-(94, 'A new programming language', FALSE, 24, 4, 9),
-(95, 'A database query language', FALSE, 24, 4, 9),
-(96, 'A CSS preprocessor', FALSE, 24, 4, 9),
+('A syntax extension to JavaScript', TRUE, 24, 4, 9),
+('A new programming language', FALSE, 24, 4, 9),
+('A database query language', FALSE, 24, 4, 9),
+('A CSS preprocessor', FALSE, 24, 4, 9),
 -- Question 25 options
-(97, 'Functions that let you hook into React state and lifecycle features', TRUE, 25, 4, 9),
-(98, 'Errors in React code', FALSE, 25, 4, 9),
-(99, 'External libraries', FALSE, 25, 4, 9),
-(100, 'Database connections', FALSE, 25, 4, 9);
+('Functions that let you hook into React state and lifecycle features', TRUE, 25, 4, 9),
+('Errors in React code', FALSE, 25, 4, 9),
+('External libraries', FALSE, 25, 4, 9),
+('Database connections', FALSE, 25, 4, 9);
 
 -- Insert data into Submission
-INSERT INTO Submission (SubmissionID, Time, Grade, AssignmentID, Learner_UserID) VALUES
-(1, '2024-02-07 15:30:00', 95.00, 1, 1),
-(2, '2024-02-14 18:45:00', 88.50, 3, 1),
-(3, '2024-02-21 20:00:00', 92.00, 6, 1),
-(4, '2024-02-10 14:20:00', 75.00, 1, 2),
-(5, '2024-02-17 16:30:00', NULL, 2, 2),
-(6, '2024-03-20 19:15:00', 68.50, 1, 6),
-(7, '2024-02-12 10:00:00', 82.00, 1, 2),
-(8, '2024-03-18 15:00:00', 78.00, 1, 6),
-(9, '2024-03-22 14:00:00', 65.00, 1, 8),
-(10, '2024-03-25 16:00:00', 72.00, 3, 8);
+INSERT INTO Submission (Time, Grade, AssignmentID, Learner_UserID) VALUES
+('2024-02-07 15:30:00', 95.00, 1, 1),
+('2024-02-14 18:45:00', 88.50, 3, 1),
+('2024-02-21 20:00:00', 92.00, 6, 1),
+('2024-02-10 14:20:00', 75.00, 1, 2),
+('2024-02-17 16:30:00', NULL, 2, 2),
+('2024-03-20 19:15:00', 68.50, 1, 6),
+('2024-02-12 10:00:00', 82.00, 1, 2),
+('2024-03-18 15:00:00', 78.00, 1, 6),
+('2024-03-22 14:00:00', 65.00, 1, 8),
+('2024-03-25 16:00:00', 72.00, 3, 8);
 
 -- Insert data into File (for Exercise submissions)
-INSERT INTO File (FileID, fileName, fileURL, ExerciseID, AssignmentID, SubmissionID) VALUES
-(1, 'portfolio.html', 'https://elearning.com/submissions/john_html_portfolio.zip', 1, 2, 5),
-(2, 'styled_portfolio.html', 'https://elearning.com/submissions/john_css_styling.zip', 2, 4, 5),
-(3, 'responsive_portfolio.html', 'https://elearning.com/submissions/john_responsive.zip', 3, 5, 5),
-(4, 'my_portfolio.html', 'https://elearning.com/submissions/jane_html_portfolio.zip', 1, 2, 5),
-(5, 'calculator.html', 'https://elearning.com/submissions/jane_calculator.zip', 4, 7, 5),
-(6, 'portfolio_sarah.html', 'https://elearning.com/submissions/sarah_portfolio.zip', 1, 2, 6);
+INSERT INTO File (fileName, fileURL, ExerciseID, AssignmentID, SubmissionID) VALUES
+('portfolio.html', 'https://elearning.com/submissions/john_html_portfolio.zip', 1, 2, 5),
+('styled_portfolio.html', 'https://elearning.com/submissions/john_css_styling.zip', 2, 4, 5),
+('responsive_portfolio.html', 'https://elearning.com/submissions/john_responsive.zip', 3, 5, 5),
+('my_portfolio.html', 'https://elearning.com/submissions/jane_html_portfolio.zip', 1, 2, 5),
+('calculator.html', 'https://elearning.com/submissions/jane_calculator.zip', 4, 7, 5),
+('portfolio_sarah.html', 'https://elearning.com/submissions/sarah_portfolio.zip', 1, 2, 6);
 
 -- Insert data into Answer (Quiz answers)
-INSERT INTO Answer (AnswerID, optionID, questionID, Learner_UserID, SubmissionID, AssignmentID) VALUES
+INSERT INTO Answer (optionID, questionID, Learner_UserID, SubmissionID, AssignmentID) VALUES
 -- John's first quiz (SubmissionID 1, Grade 95)
-(1, 1, 1, 1, 1, 1),
-(2, 5, 2, 1, 1, 1),
-(3, 9, 3, 1, 1, 1),
-(4, 13, 4, 1, 1, 1),
-(5, 17, 5, 1, 1, 1),
-(6, 21, 6, 1, 1, 1),
-(7, 25, 7, 1, 1, 1),
-(8, 29, 8, 1, 1, 1),
-(9, 33, 9, 1, 1, 1),
+(1, 1, 1, 1, 1),
+(5, 2, 1, 1, 1),
+(9, 3, 1, 1, 1),
+(13, 4, 1, 1, 1),
+(17, 5, 1, 1, 1),
+(21, 6, 1, 1, 1),
+(25, 7, 1, 1, 1),
+(29, 8, 1, 1, 1),
+(33, 9, 1, 1, 1),
 -- John's CSS quiz (SubmissionID 2, Grade 88.5)
-(10, 37, 10, 1, 2, 3),
-(11, 41, 11, 1, 2, 3),
-(12, 45, 12, 1, 2, 3),
-(13, 49, 13, 1, 2, 3),
-(14, 53, 14, 1, 2, 3),
-(15, 58, 15, 1, 2, 3),
+(37, 10, 1, 2, 3),
+(41, 11, 1, 2, 3),
+(45, 12, 1, 2, 3),
+(49, 13, 1, 2, 3),
+(53, 14, 1, 2, 3),
+(58, 15, 1, 2, 3),
 -- John's JS quiz (SubmissionID 3, Grade 92)
-(16, 61, 16, 1, 3, 6),
-(17, 65, 17, 1, 3, 6),
-(18, 69, 18, 1, 3, 6),
-(19, 73, 19, 1, 3, 6),
-(20, 77, 20, 1, 3, 6);
+(61, 16, 1, 3, 6),
+(65, 17, 1, 3, 6),
+(69, 18, 1, 3, 6),
+(73, 19, 1, 3, 6),
+(77, 20, 1, 3, 6);
 
 ------- Stored Procedures and Functions --------
 ---2.1 - Quiz Management---
@@ -748,18 +748,22 @@ CREATE PROCEDURE sp_DeleteQuestion(
     IN p_questionID INT
 )
 BEGIN
+    -- 1. Check if the question exists
     IF NOT EXISTS (SELECT 1 FROM Question WHERE questionID = p_questionID) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Error: Question ID not found.';
     END IF;
 
-    IF EXISTS (SELECT 1 FROM Option_Table WHERE questionID = p_questionID) THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: Cannot delete question. Options exist for this question. Please delete the options first to ensure data integrity.';
-    END IF;
+    -- 2. Delete all answers that reference this question
+    DELETE FROM Answer WHERE questionID = p_questionID;
 
+    -- 3. Delete all options for this question
+    DELETE FROM Option_Table WHERE questionID = p_questionID;
+
+    -- 4. Delete the question itself
     DELETE FROM Question WHERE questionID = p_questionID;
 
+    -- 5. Return success message
     SELECT 'Question deleted successfully' AS Message;
 END$$
 
@@ -1038,357 +1042,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
--- =====================================================
--- TEST CASES FOR TRIGGERS, PROCEDURES AND FUNCTIONS
--- =====================================================
-
--- =====================================================
--- SECTION 1: TEST TRIGGERS
--- =====================================================
-
--- Test 1.1: tg_check_instructor_role (Should FAIL - user is learner)
--- Expected: Error because UserID 1 has role 'learner', not 'instructor'
--- INSERT INTO INSTRUCTOR (UserID, Bio, Specialization) VALUES
--- (1, 'Test Bio', 'Test Specialization');
-
--- Test 1.2: tg_check_instructor_role (Should SUCCEED - user is instructor)
--- Expected: Success
--- INSERT INTO INSTRUCTOR (UserID, Bio, Specialization) VALUES
--- (3, 'Another instructor bio', 'Testing');
-
--- Test 1.3: tg_check_learner_role (Should FAIL - user is instructor)
--- Expected: Error because UserID 3 has role 'instructor', not 'learner'
--- INSERT INTO LEARNER (UserID, Birthday) VALUES
--- (3, '1990-01-01');
-
--- Test 1.4: tg_check_learner_role (Should SUCCEED - user is learner)
--- Expected: Success
--- INSERT INTO LEARNER (UserID, Birthday) VALUES
--- (1, '2000-05-15');
-
--- Test 1.5: tg_check_admin_role (Should FAIL - user is learner)
--- Expected: Error because UserID 1 has role 'learner', not 'admin'
--- INSERT INTO ADMIN (UserID, adminID, accessLevel) VALUES
--- (1, 2, 2);
-
--- Test 1.6: tg_check_admin_role (Should SUCCEED - user is admin)
--- Expected: Success
--- INSERT INTO ADMIN (UserID, adminID, accessLevel) VALUES
--- (5, 1, 3);
-
--- Test 1.7: tg_auto_complete_course (Should auto-set status to 'completed')
--- Expected: Status changes to 'completed' when Progress reaches 100
-SELECT 'Test 1.7: Before update' AS Test, Progress, Status FROM ENROLL WHERE Learner_UserID = 1 AND Course_CourseID = 1;
-UPDATE ENROLL SET Progress = 100 WHERE Learner_UserID = 1 AND Course_CourseID = 1;
-SELECT 'Test 1.7: After update' AS Test, Progress, Status FROM ENROLL WHERE Learner_UserID = 1 AND Course_CourseID = 1;
-
--- Test 1.8: tg_check_quiz_total_score (Should FAIL - exceeds total score)
--- Expected: Error because adding this question would exceed Quiz totalScore (100)
--- INSERT INTO Question (qText, score, quizID, AssignmentID) VALUES
--- ('Test Question - Should Fail', 50, 1, 1);
--- Note: Quiz 1 already has total 100 points from 9 questions
-
--- Test 1.9: tg_check_quiz_total_score (Should SUCCEED if within limit)
--- First, create a new quiz with higher total score
-INSERT INTO Assignment (AssignmentID, startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES
-(100, '2024-06-01 00:00:00', '2024-06-08 23:59:59', 'Test Quiz Assignment', 1, 1, 1);
-
-INSERT INTO Quiz (quizID, Passing_Score, Duration, totalScore, AssignmentID) VALUES
-(100, 70, 30, 200, 100);
-
--- This should succeed
-INSERT INTO Question (questionID, qText, score, quizID, AssignmentID) VALUES
-(100, 'Test Question 1', 50, 100, 100);
-
-SELECT 'Test 1.9: Question added successfully' AS Result;
-
--- Test 1.10: tg_check_quiz_total_score_update (Should FAIL - update exceeds limit)
--- Expected: Error when updating score causes total to exceed limit
--- UPDATE Question SET score = 160 WHERE questionID = 100;
-
--- =====================================================
--- SECTION 2: TEST STORED PROCEDURES
--- =====================================================
-
--- Test 2.1: sp_AddQuestion (Should SUCCEED)
-SELECT '=== Test 2.1: sp_AddQuestion (SUCCESS) ===' AS Test;
-CALL sp_AddQuestion(100, 'What is SQL?', 25);
-SELECT * FROM Question WHERE quizID = 100;
-
--- Test 2.2: sp_AddQuestion (Should FAIL - empty description)
-SELECT '=== Test 2.2: sp_AddQuestion (FAIL - empty description) ===' AS Test;
--- CALL sp_AddQuestion(100, '   ', 10);
-
--- Test 2.3: sp_AddQuestion (Should FAIL - invalid score)
-SELECT '=== Test 2.3: sp_AddQuestion (FAIL - score <= 0) ===' AS Test;
--- CALL sp_AddQuestion(100, 'Test Question', -5);
-
--- Test 2.4: sp_AddQuestion (Should FAIL - quiz not exists)
-SELECT '=== Test 2.4: sp_AddQuestion (FAIL - quiz not exists) ===' AS Test;
--- CALL sp_AddQuestion(999, 'Test Question', 10);
-
--- Test 2.5: sp_UpdateQuestion (Should SUCCEED)
-SELECT '=== Test 2.5: sp_UpdateQuestion (SUCCESS) ===' AS Test;
-SELECT 'Before Update:' AS Status, questionID, qText, score FROM Question WHERE questionID = 100;
-CALL sp_UpdateQuestion(100, 'Updated: What is SQL?', 60);
-SELECT 'After Update:' AS Status, questionID, qText, score FROM Question WHERE questionID = 100;
-
--- Test 2.6: sp_UpdateQuestion (Should FAIL - question not exists)
-SELECT '=== Test 2.6: sp_UpdateQuestion (FAIL - question not exists) ===' AS Test;
--- CALL sp_UpdateQuestion(9999, 'Test', 10);
-
--- Test 2.7: sp_UpdateQuestion (Should FAIL - empty description)
-SELECT '=== Test 2.7: sp_UpdateQuestion (FAIL - empty description) ===' AS Test;
--- CALL sp_UpdateQuestion(100, '', 10);
-
--- Test 2.8: sp_DeleteQuestion (Should FAIL - has options)
-SELECT '=== Test 2.8: sp_DeleteQuestion (FAIL - has options) ===' AS Test;
--- This should fail because question 1 has options
--- CALL sp_DeleteQuestion(1);
-
--- Test 2.9: sp_DeleteQuestion (Should SUCCEED - no options)
-SELECT '=== Test 2.9: sp_DeleteQuestion (SUCCESS) ===' AS Test;
-SELECT 'Before Delete:' AS Status, COUNT(*) AS QuestionCount FROM Question WHERE questionID = 100;
-CALL sp_DeleteQuestion(100);
-SELECT 'After Delete:' AS Status, COUNT(*) AS QuestionCount FROM Question WHERE questionID = 100;
-
--- Test 2.10: sp_GetQuizDetails
-SELECT '=== Test 2.10: sp_GetQuizDetails ===' AS Test;
-CALL sp_GetQuizDetails(1);
-
--- Test 2.11: sp_GetQuizDetails (Should FAIL - quiz not exists)
-SELECT '=== Test 2.11: sp_GetQuizDetails (FAIL - quiz not exists) ===' AS Test;
--- CALL sp_GetQuizDetails(9999);
-
--- Test 2.12: sp_GetQuizStatistics
-SELECT '=== Test 2.12: sp_GetQuizStatistics ===' AS Test;
--- Get quizzes in assignment 1 with at least 5 questions
-CALL sp_GetQuizStatistics(1, 5);
-
--- Test 2.13: sp_GetQuizStatistics (different parameters)
-SELECT '=== Test 2.13: sp_GetQuizStatistics (min 3 questions) ===' AS Test;
-CALL sp_GetQuizStatistics(1, 3);
-
--- Test 2.14: sp_GetQuizzesByCourse
-SELECT '=== Test 2.14: sp_GetQuizzesByCourse ===' AS Test;
-CALL sp_GetQuizzesByCourse(1);
-
--- Test 2.15: sp_GetQuizzesByCourse (Course 2)
-SELECT '=== Test 2.15: sp_GetQuizzesByCourse (Course 2) ===' AS Test;
-CALL sp_GetQuizzesByCourse(2);
-
--- Test 2.16: sp_GetActiveLearnersInCourse (all statuses)
-SELECT '=== Test 2.16: sp_GetActiveLearnersInCourse (active) ===' AS Test;
-CALL sp_GetActiveLearnersInCourse(1, 'active');
-
--- Test 2.17: sp_GetActiveLearnersInCourse (in-progress only)
-SELECT '=== Test 2.17: sp_GetActiveLearnersInCourse (in-progress) ===' AS Test;
-CALL sp_GetActiveLearnersInCourse(1, 'in-progress');
-
--- Test 2.18: sp_GetActiveLearnersInCourse (completed only)
-SELECT '=== Test 2.18: sp_GetActiveLearnersInCourse (completed) ===' AS Test;
-CALL sp_GetActiveLearnersInCourse(1, 'completed');
-
--- Test 2.19: sp_GetStudentQuizPerformance (passing score 70)
-SELECT '=== Test 2.19: sp_GetStudentQuizPerformance (min score 70) ===' AS Test;
-CALL sp_GetStudentQuizPerformance(1, 70);
-
--- Test 2.20: sp_GetStudentQuizPerformance (passing score 80)
-SELECT '=== Test 2.20: sp_GetStudentQuizPerformance (min score 80) ===' AS Test;
-CALL sp_GetStudentQuizPerformance(1, 80);
-
--- Test 2.21: sp_GetStudentQuizPerformance (passing score 50)
-SELECT '=== Test 2.21: sp_GetStudentQuizPerformance (min score 50) ===' AS Test;
-CALL sp_GetStudentQuizPerformance(1, 50);
-
--- =====================================================
--- SECTION 3: TEST FUNCTIONS
--- =====================================================
-
--- Test 3.1: UpdateCourseProgress (Should calculate and update progress)
-SELECT '=== Test 3.1: UpdateCourseProgress ===' AS Test;
-SELECT 'Before:' AS Status, Learner_UserID, Course_CourseID, Progress, Status 
-FROM ENROLL WHERE Learner_UserID = 2 AND Course_CourseID = 1;
-
-SELECT UpdateCourseProgress(2, 1) AS NewProgress;
-
-SELECT 'After:' AS Status, Learner_UserID, Course_CourseID, Progress, Status 
-FROM ENROLL WHERE Learner_UserID = 2 AND Course_CourseID = 1;
-
--- Test 3.2: UpdateCourseProgress (Should FAIL - enrollment not exists)
-SELECT '=== Test 3.2: UpdateCourseProgress (FAIL - no enrollment) ===' AS Test;
-SELECT UpdateCourseProgress(999, 999) AS Result;
--- Expected: -1.00
-
--- Test 3.3: UpdateCourseProgress (Learner with completed quizzes)
-SELECT '=== Test 3.3: UpdateCourseProgress (Learner 1) ===' AS Test;
-SELECT 'Before:' AS Status, Learner_UserID, Course_CourseID, Progress, Status 
-FROM ENROLL WHERE Learner_UserID = 1 AND Course_CourseID = 1;
-
-SELECT UpdateCourseProgress(1, 1) AS NewProgress;
-
-SELECT 'After:' AS Status, Learner_UserID, Course_CourseID, Progress, Status 
-FROM ENROLL WHERE Learner_UserID = 1 AND Course_CourseID = 1;
-
--- Test 3.4: CalculatePunctualityScore
-SELECT '=== Test 3.4: CalculatePunctualityScore ===' AS Test;
--- Learner 2 in Course 1
-SELECT CalculatePunctualityScore(2, 1) AS PunctualityScore;
-
--- Test 3.5: CalculatePunctualityScore (Should FAIL - enrollment not exists)
-SELECT '=== Test 3.5: CalculatePunctualityScore (FAIL - no enrollment) ===' AS Test;
-SELECT CalculatePunctualityScore(999, 999) AS Result;
--- Expected: 0
-
--- Test 3.6: CalculatePunctualityScore (Different learners)
-SELECT '=== Test 3.6: CalculatePunctualityScore (Multiple learners) ===' AS Test;
-SELECT 
-    1 AS LearnerID, 
-    CalculatePunctualityScore(1, 1) AS PunctualityScore
-UNION ALL
-SELECT 
-    2 AS LearnerID, 
-    CalculatePunctualityScore(2, 1) AS PunctualityScore
-UNION ALL
-SELECT 
-    6 AS LearnerID, 
-    CalculatePunctualityScore(6, 1) AS PunctualityScore
-UNION ALL
-SELECT 
-    8 AS LearnerID, 
-    CalculatePunctualityScore(8, 1) AS PunctualityScore;
-
--- =====================================================
--- SECTION 4: COMPREHENSIVE INTEGRATION TESTS
--- =====================================================
-
--- Test 4.1: Complete workflow - Add Quiz -> Add Questions -> Get Details
-SELECT '=== Test 4.1: Complete Quiz Workflow ===' AS Test;
-
--- Create new assignment
-INSERT INTO Assignment (AssignmentID, startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES
-(200, '2024-07-01 00:00:00', '2024-07-08 23:59:59', 'Integration Test Quiz', 1, 2, 4);
-
--- Create new quiz
-INSERT INTO Quiz (quizID, Passing_Score, Duration, totalScore, AssignmentID) VALUES
-(200, 60, 20, 100, 200);
-
--- Add questions using stored procedure
-CALL sp_AddQuestion(200, 'Integration Test Q1', 25);
-CALL sp_AddQuestion(200, 'Integration Test Q2', 25);
-CALL sp_AddQuestion(200, 'Integration Test Q3', 25);
-CALL sp_AddQuestion(200, 'Integration Test Q4', 25);
-
--- Get quiz details
-SELECT 'Quiz Details:' AS Info;
-CALL sp_GetQuizDetails(200);
-
--- Get quiz statistics
-SELECT 'Quiz Statistics:' AS Info;
-CALL sp_GetQuizStatistics(200, 3);
-
--- Test 4.2: Test constraint validations
-SELECT '=== Test 4.2: Constraint Validations ===' AS Test;
-
--- Test assignment date constraint (Should FAIL if dueDate <= startDate)
--- INSERT INTO Assignment (AssignmentID, startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES
--- (300, '2024-08-10 00:00:00', '2024-08-05 23:59:59', 'Invalid Date Assignment', 1, 1, 1);
-
--- Test quiz passing score constraint (Should FAIL if Passing_Score > totalScore)
--- INSERT INTO Quiz (quizID, Passing_Score, Duration, totalScore, AssignmentID) VALUES
--- (300, 150, 30, 100, 1);
-
--- Test progress percentage constraint (Should FAIL if Progress > 100)
--- UPDATE ENROLL SET Progress = 150 WHERE Learner_UserID = 1 AND Course_CourseID = 1;
-
--- Test lesson duration constraint (Should FAIL if Duration <= 0)
--- INSERT INTO Lesson (LessonID, Title, Order_Num, Duration, CourseID, ModuleID) VALUES
--- (100, 'Invalid Lesson', 1, -10, 1, 1);
-
--- =====================================================
--- SECTION 5: PERFORMANCE AND EDGE CASE TESTS
--- =====================================================
-
--- Test 5.1: Large dataset query performance
-SELECT '=== Test 5.1: Query Performance Test ===' AS Test;
-SELECT COUNT(*) AS TotalQuestions FROM Question;
-SELECT COUNT(*) AS TotalOptions FROM Option_Table;
-SELECT COUNT(*) AS TotalSubmissions FROM Submission;
-
--- Test 5.2: Test with NULL values
-SELECT '=== Test 5.2: NULL Value Handling ===' AS Test;
--- Check submissions with NULL grades
-SELECT SubmissionID, Learner_UserID, AssignmentID, Grade 
-FROM Submission 
-WHERE Grade IS NULL;
-
--- Test 5.3: Test cascading relationships
-SELECT '=== Test 5.3: Relationship Integrity ===' AS Test;
--- Verify all foreign key relationships
-SELECT 
-    'Course-Module' AS Relationship,
-    COUNT(*) AS Count
-FROM Module m
-JOIN Course c ON m.CourseID = c.CourseID
-UNION ALL
-SELECT 
-    'Module-Lesson' AS Relationship,
-    COUNT(*) AS Count
-FROM Lesson l
-JOIN Module m ON l.ModuleID = m.ModuleID
-UNION ALL
-SELECT 
-    'Lesson-Assignment' AS Relationship,
-    COUNT(*) AS Count
-FROM Assignment a
-JOIN Lesson l ON a.LessonID = l.LessonID
-UNION ALL
-SELECT 
-    'Assignment-Quiz' AS Relationship,
-    COUNT(*) AS Count
-FROM Quiz q
-JOIN Assignment a ON q.AssignmentID = a.AssignmentID;
-
--- Test 5.4: Aggregation tests
-SELECT '=== Test 5.4: Aggregation Tests ===' AS Test;
--- Average quiz scores by learner
-SELECT 
-    u.FullName,
-    COUNT(DISTINCT s.SubmissionID) AS TotalSubmissions,
-    AVG(s.Grade) AS AverageScore,
-    MAX(s.Grade) AS HighestScore,
-    MIN(s.Grade) AS LowestScore
-FROM USER u
-JOIN LEARNER l ON u.UserID = l.UserID
-JOIN Submission s ON l.UserID = s.Learner_UserID
-WHERE s.Grade IS NOT NULL
-GROUP BY u.UserID, u.FullName
-ORDER BY AverageScore DESC;
-
--- Test 5.5: Enrollment statistics by course
-SELECT '=== Test 5.5: Enrollment Statistics ===' AS Test;
-SELECT 
-    c.CTitle AS CourseName,
-    COUNT(DISTINCT e.Learner_UserID) AS TotalLearners,
-    AVG(e.Progress) AS AverageProgress,
-    SUM(CASE WHEN e.Status = 'completed' THEN 1 ELSE 0 END) AS CompletedCount,
-    SUM(CASE WHEN e.Status = 'in-progress' THEN 1 ELSE 0 END) AS InProgressCount
-FROM Course c
-LEFT JOIN ENROLL e ON c.CourseID = e.Course_CourseID
-GROUP BY c.CourseID, c.CTitle
-ORDER BY TotalLearners DESC;
-
--- =====================================================
--- TEST SUMMARY
--- =====================================================
-SELECT '=====================================' AS Summary;
-SELECT 'ALL TEST CASES COMPLETED' AS Summary;
-SELECT '=====================================' AS Summary;
-SELECT 'Review the results above to verify:' AS Summary;
-SELECT '1. All triggers working correctly' AS Summary;
-SELECT '2. All stored procedures returning expected results' AS Summary;
-SELECT '3. All functions calculating correctly' AS Summary;
-SELECT '4. All constraints enforced properly' AS Summary;
-SELECT '5. Data integrity maintained' AS Summary;
-SELECT '=====================================' AS Summary;

@@ -26,10 +26,11 @@ export class AuthService {
 
             // Insert user into USER table
             const [userResult] = await connection.execute(
-                `INSERT INTO USER (FullName, DateCreated, phoneNumber, Email, Password_hash, Role) 
-                 VALUES (?, NOW(), ?, ?, ?, ?)`,
+                `INSERT INTO USER (FullName, username, phoneNumber, Email, Password_hash, Role) 
+                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [
                     `${userData.firstName} ${userData.lastName}`,
+                    userData.username || userData.email.split('@')[0],
                     userData.phoneNumber,
                     userData.email,
                     hashedPassword,

@@ -36,9 +36,9 @@ function QuizzesByCourseContent() {
           const courseResponse = await fetch(`/api/courses`);
           if (courseResponse.ok) {
             const courses = await courseResponse.json();
-            const course = courses.find((c: any) => c.courseID === parseInt(courseID));
+            const course = courses.find((c: any) => c.CourseID === parseInt(courseID));
             if (course) {
-              setCourseName(course.courseTitle);
+              setCourseName(course.CTitle);
             }
           }
         }

@@ -74,8 +74,33 @@ export async function GET(
         console.log('🔍 Query 3 - DESIGN table:', assignmentRows);
         console.log('🔍 Query 3 params:', { courseID, instructorUserID });
 
-        canEdit = Array.isArray(assignmentRows) && assignmentRows.length > 0;
-        console.log('✅ Final canEdit:', canEdit);
+        const isInstructor = Array.isArray(assignmentRows) && assignmentRows.length > 0;
+        
+        if (!isInstructor) {
+          canEdit = false;
+          console.log('❌ Instructor not assigned to this course');
+        } else {
+          // Step 4: Check if quiz has submissions (if yes, cannot edit)
+          const [submissionRows] = await connection.execute(
+            `SELECT COUNT(*) as submissionCount
+             FROM Submission s
+             JOIN Assignment a ON s.AssignmentID = a.AssignmentID
+             JOIN Quiz q ON a.AssignmentID = q.AssignmentID
+             WHERE q.quizID = ?`,
+            [quizID]
+          );
+
+          const submissionCount = (submissionRows[0] as any).submissionCount;
+          console.log('🔍 Query 4 - Submission count:', submissionCount);
+
+          if (submissionCount > 0) {
+            canEdit = false;
+            console.log('❌ Quiz has submissions, cannot edit');
+          } else {
+            canEdit = true;
+            console.log('✅ Final canEdit: true (instructor assigned and no submissions)');
+          }
+        }
       }
     }
   } catch (error: any) {

@@ -53,17 +53,17 @@ export default function CoursesPage() {
   // Filter and sort courses
   const filteredAndSortedCourses = courses
     .filter((course) => {
-      const matchesSearch = course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            course.courseDescription.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === null || course.categoryID === selectedCategory;
+      const matchesSearch = (course.CTitle?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                            (course.Description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === null || course.CategoryID === selectedCategory;
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
       if (sortType === 'name-asc') {
-        return a.courseTitle.localeCompare(b.courseTitle);
+        return (a.CTitle || '').localeCompare(b.CTitle || '');
       }
       if (sortType === 'name-desc') {
-        return b.courseTitle.localeCompare(a.courseTitle);
+        return (b.CTitle || '').localeCompare(a.CTitle || '');
       }
       return 0; // default
     });
@@ -137,24 +137,24 @@ export default function CoursesPage() {
             {/* Category List */}
             <div className="space-y-1.5 mt-3">
               {categories.map((category, index) => {
-                const courseCount = courses.filter(c => c.categoryID === category.categoryID).length;
+                const courseCount = courses.filter(c => c.CategoryID === category.CategoryID).length;
                 return (
                   <button
-                    key={category.categoryID}
+                    key={category.CategoryID}
                     onClick={() => {
-                      setSelectedCategory(category.categoryID);
+                      setSelectedCategory(category.CategoryID);
                       if (window.innerWidth < 1024) setIsSidebarOpen(false);
                     }}
                     style={{ animationDelay: `${index * 50}ms` }}
                     className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-200 transform hover:scale-[1.02] animate-slide-down ${
-                      selectedCategory === category.categoryID
+                      selectedCategory === category.CategoryID
                         ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-smooth-lg scale-[1.02]'
                         : 'bg-white hover:bg-slate-50 text-slate-700 shadow-smooth hover:shadow-smooth-lg'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <GraduationCap size={16} />
-                      <span className="font-medium text-sm">{category.categoryName}</span>
+                      <span className="font-medium text-sm">{category.Name}</span>
                     </div>
                     <span className="text-xs opacity-80 ml-6">{courseCount} courses</span>
                   </button>
@@ -181,7 +181,7 @@ export default function CoursesPage() {
                 <div>
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold gradient-text">
                     {selectedCategory 
-                      ? categories.find(c => c.categoryID === selectedCategory)?.categoryName 
+                      ? categories.find(c => c.CategoryID === selectedCategory)?.Name 
                       : 'All Courses'}
                   </h1>
                   <p className="text-sm text-slate-500 mt-1">
@@ -229,8 +229,8 @@ export default function CoursesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredAndSortedCourses.map((course, index) => (
                   <div
-                    key={course.courseID}
-                    onClick={() => handleCourseClick(course.courseID)}
+                    key={course.CourseID}
+                    onClick={() => handleCourseClick(course.CourseID)}
                     style={{ animationDelay: `${index * 50}ms` }}
                     className="group cursor-pointer animate-scale-in"
                   >
@@ -260,12 +260,12 @@ export default function CoursesPage() {
                       {/* Content */}
                       <div className="relative h-full flex flex-col justify-end p-6 transition-all duration-300 group-hover:p-7">
                         <h3 className="text-white text-xl font-bold mb-3 drop-shadow-lg transform transition-transform duration-300 group-hover:translate-y-[-4px]">
-                          {course.courseTitle}
+                          {course.CTitle}
                         </h3>
-                        {course.categoryName && (
+                        {course.CategoryName && (
                           <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-white/95 text-slate-800 w-fit backdrop-blur-sm shadow-smooth transform transition-all duration-300 group-hover:scale-105">
                             <GraduationCap size={14} className="mr-1.5" />
-                            {course.categoryName}
+                            {course.CategoryName}
                           </span>
                         )}
                       </div>

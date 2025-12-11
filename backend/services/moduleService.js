@@ -49,6 +49,7 @@ export class ModuleService {
                     l.Order_Num as lessonOrder,
                     l.Duration as lessonDuration,
                     l.ModuleID,
+                    m.materialURL as lessonMaterialURL,
                     a.AssignmentID,
                     a.startDate,
                     a.dueDate,
@@ -62,12 +63,13 @@ export class ModuleService {
                     e.Title as exerciseTitle,
                     e.Description as exerciseDescription
                 FROM Lesson l
+                LEFT JOIN Material m ON l.LessonID = m.LessonID
                 LEFT JOIN Assignment a ON l.LessonID = a.LessonID
                 LEFT JOIN Quiz q ON a.AssignmentID = q.AssignmentID
                 LEFT JOIN Question qst ON q.quizID = qst.quizID
                 LEFT JOIN Exercise e ON a.AssignmentID = e.AssignmentID
                 WHERE l.ModuleID = ?
-                GROUP BY l.LessonID, l.Title, l.Order_Num, l.Duration, l.ModuleID,
+                GROUP BY l.LessonID, l.Title, l.Order_Num, l.Duration, l.ModuleID, m.materialURL,
                          a.AssignmentID, a.startDate, a.dueDate, a.title,
                          q.quizID, q.Passing_Score, q.Duration, q.totalScore,
                          e.ExerciseID, e.Title, e.Description
@@ -86,6 +88,7 @@ export class ModuleService {
                         lessonTitle: row.lessonTitle,
                         lessonOrder: row.lessonOrder,
                         lessonDuration: row.lessonDuration,
+                        lessonMaterialURL: row.lessonMaterialURL || '#',
                         assignments: [] // Array of assignments
                     });
                 }
