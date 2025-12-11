@@ -1,15 +1,14 @@
 export interface User {
-  userID: number
-  FNAME: string
-  LNAME: string
-  email: string
-  username: string
-  role: 'learner' | 'instructor' | 'admin'
+  UserID: number
+  FullName: string
+  Email: string
   phoneNumber: string
-  approvalStatus: 'pending' | 'approved' | 'rejected'
-  accountStatus: 'active' | 'inactive' | 'suspended'
-  createdDate: string
-  instructorID?: number
-  learnerID?: number
-  adminID?: number
+  Role: 'learner' | 'instructor' | 'admin'
+  DateCreated?: Date
+  // Role-specific fields
+  Birthday?: Date // for learners
+  Bio?: string // for instructors
+  Specialization?: string // for instructors
+  adminID?: number // for admins
+  accessLevel?: number // for admins
 }

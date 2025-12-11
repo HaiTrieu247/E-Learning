@@ -252,7 +252,7 @@ export default function QuizDetailPage() {
         }
 
         const user = JSON.parse(userData);
-        const res = await fetch(`/api/quizzes/${quizID}/check-instructor?userID=${user.userID}`);
+        const res = await fetch(`/api/quizzes/${quizID}/check-instructor?userID=${user.UserID}`);
         
         if (res.ok) {
           const data = await res.json();

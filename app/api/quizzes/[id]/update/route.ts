@@ -31,21 +31,21 @@ export async function PUT(
     try {
       connection = await createConnection();
       
-      // Update quiz
+      // Update quiz in Quiz table
       await connection.execute(
-        `UPDATE Quizzes 
-         SET quizTitle = ?, totalMarks = ?, passingMarks = ?, quizDuration = ?
+        `UPDATE Quiz 
+         SET Passing_Score = ?, totalScore = ?, Duration = ?
          WHERE quizID = ?`,
-        [quizTitle, totalMarks, passingMarks, quizDuration, quizID]
+        [passingMarks, totalMarks, quizDuration, quizID]
       );
 
-      // Update assignment dates if provided
+      // Update assignment dates and title if provided
       if (assignmentID && startDate && dueDate) {
         await connection.execute(
-          `UPDATE lessonAssignments 
-           SET startDate = ?, dueDate = ?
-           WHERE assignmentID = ?`,
-          [startDate, dueDate, assignmentID]
+          `UPDATE Assignment 
+           SET startDate = ?, dueDate = ?, title = ?
+           WHERE AssignmentID = ?`,
+          [startDate, dueDate, quizTitle, assignmentID]
         );
       }
 

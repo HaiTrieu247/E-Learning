@@ -231,8 +231,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredCourses.map((course) => (
               <Link
-                key={course.courseID}
-                href={`/courses/${course.courseID}?courseID=${course.courseID}`}
+                href={`/courses/${course.CourseID}?courseID=${course.CourseID}`}
+                key={course.CourseID}
                 className="block bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2 group"
               >
                 {/* Course Image/Gradient */}
@@ -249,10 +249,10 @@ export default function Home() {
                 {/* Course Content */}
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                    {course.courseTitle}
+                    {course.CTitle}
                   </h3>
                   <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {course.courseDescription}
+                    {course.Description}
                   </p>
 
                   {/* Course Meta */}

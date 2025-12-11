@@ -11,29 +11,28 @@ export class AuthService {
             connection = await createConnection();
             await connection.beginTransaction();
 
-            // Check if username or email already exists
+            // Check if email already exists in USER table
             const [existingUsers] = await connection.execute(
-                'SELECT userID FROM users WHERE username = ? OR email = ?',
-                [userData.username, userData.email]
+                'SELECT UserID FROM USER WHERE Email = ?',
+                [userData.email]
             );
 
             if (existingUsers.length > 0) {
-                throw new Error('Username or email already exists');
+                throw new Error('Email already exists');
             }
 
             // Hash password
             const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-            // Insert user with embedded approval/status fields
+            // Insert user into USER table
             const [userResult] = await connection.execute(
-                `INSERT INTO users (FNAME, LNAME, phoneNumber, email, username, password_hashed, role, approvalStatus, accountStatus, createdDate) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', 'active', CURRENT_TIMESTAMP)`,
+                `INSERT INTO USER (FullName, username, phoneNumber, Email, Password_hash, Role) 
+                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [
-                    userData.firstName,
-                    userData.lastName,
+                    `${userData.firstName} ${userData.lastName}`,
+                    userData.username || userData.email.split('@')[0],
                     userData.phoneNumber,
                     userData.email,
-                    userData.username,
                     hashedPassword,
                     userData.role
                 ]
@@ -43,18 +42,18 @@ export class AuthService {
             // Insert into role-specific table
             if (userData.role === 'learner') {
                 await connection.execute(
-                    'INSERT INTO learners (userID, enrollmentDate) VALUES (?, CURDATE())',
-                    [userID]
+                    'INSERT INTO LEARNER (UserID, Birthday) VALUES (?, ?)',
+                    [userID, userData.birthday || null]
                 );
             } else if (userData.role === 'instructor') {
                 await connection.execute(
-                    'INSERT INTO instructors (userID, Bio, specialty) VALUES (?, ?, ?)',
+                    'INSERT INTO INSTRUCTOR (UserID, Bio, Specialization) VALUES (?, ?, ?)',
                     [userID, '', '']
                 );
             } else if (userData.role === 'admin') {
                 await connection.execute(
-                    'INSERT INTO administrators (userID, accessLevel) VALUES (?, ?)',
-                    [userID, 'content_manager']
+                    'INSERT INTO ADMIN (UserID, adminID, accessLevel) VALUES (?, ?, ?)',
+                    [userID, userID, 2]
                 );
             }
 
@@ -62,7 +61,7 @@ export class AuthService {
 
             // Return user without password
             const [newUser] = await connection.execute(
-                'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber, approvalStatus, accountStatus, createdDate FROM users WHERE userID = ?',
+                'SELECT UserID, FullName, Email, Role, phoneNumber FROM USER WHERE UserID = ?',
                 [userID]
             );
 
@@ -85,19 +84,19 @@ export class AuthService {
     /**
      * Login user
      */
-    async login(username, password) {
+    async login(email, password) {
         let connection;
         try {
             connection = await createConnection();
             
-            // Get user by username
+            // Get user by email from USER table
             const [users] = await connection.execute(
-                'SELECT userID, FNAME, LNAME, email, username, password_hashed, role, phoneNumber, approvalStatus, accountStatus FROM users WHERE username = ?',
-                [username]
+                'SELECT UserID, FullName, Email, Password_hash, Role, phoneNumber FROM USER WHERE Email = ?',
+                [email]
             );
 
             if (users.length === 0) {
-                throw new Error('Invalid username or password');
+                throw new Error('Invalid email or password');
             }
 
             const user = users[0];
@@ -112,14 +111,14 @@ export class AuthService {
             }
 
             // Verify password
-            const isPasswordValid = await bcrypt.compare(password, user.password_hashed);
+            const isPasswordValid = await bcrypt.compare(password, user.Password_hash);
             
             if (!isPasswordValid) {
-                throw new Error('Invalid username or password');
+                throw new Error('Invalid email or password');
             }
 
             // Remove password from response
-            delete user.password_hashed;
+            delete user.Password_hash;
 
             return user;
         } catch (error) {
@@ -145,7 +144,7 @@ export class AuthService {
             connection = await createConnection();
             
             const [users] = await connection.execute(
-                'SELECT userID, FNAME, LNAME, email, username, role, phoneNumber, approvalStatus, accountStatus, createdDate FROM users WHERE userID = ?',
+                'SELECT UserID, FullName, Email, Role, phoneNumber FROM USER WHERE UserID = ?',
                 [userID]
             );
 
@@ -172,7 +171,7 @@ export class AuthService {
         try {
             connection = await createConnection();
             
-            const allowedFields = ['FNAME', 'LNAME', 'email', 'phoneNumber'];
+            const allowedFields = ['FullName', 'Email', 'phoneNumber'];
             const updateFields = [];
             const values = [];
 
@@ -190,7 +189,7 @@ export class AuthService {
             values.push(userID);
 
             await connection.execute(
-                `UPDATE users SET ${updateFields.join(', ')} WHERE userID = ?`,
+                `UPDATE USER SET ${updateFields.join(', ')} WHERE UserID = ?`,
                 values
             );
 
@@ -217,9 +216,9 @@ export class AuthService {
         try {
             connection = await createConnection();
             
-            // Get current password hash
+            // Get current password hash from USER table
             const [users] = await connection.execute(
-                'SELECT password_hashed FROM users WHERE userID = ?',
+                'SELECT Password_hash FROM USER WHERE UserID = ?',
                 [userID]
             );
 
@@ -228,7 +227,7 @@ export class AuthService {
             }
 
             // Verify current password
-            const isPasswordValid = await bcrypt.compare(currentPassword, users[0].password_hashed);
+            const isPasswordValid = await bcrypt.compare(currentPassword, users[0].Password_hash);
             
             if (!isPasswordValid) {
                 throw new Error('Current password is incorrect');
@@ -237,9 +236,9 @@ export class AuthService {
             // Hash new password
             const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-            // Update password
+            // Update password in USER table
             await connection.execute(
-                'UPDATE users SET password_hashed = ? WHERE userID = ?',
+                'UPDATE USER SET Password_hash = ? WHERE UserID = ?',
                 [hashedPassword, userID]
             );
 

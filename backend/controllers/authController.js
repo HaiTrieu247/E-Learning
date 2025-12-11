@@ -9,8 +9,8 @@ export class AuthController {
         try {
             const body = await request.json();
             
-            // Validate required fields
-            const requiredFields = ['firstName', 'lastName', 'email', 'username', 'phoneNumber', 'password', 'role'];
+            // Validate required fields (username removed from schema)
+            const requiredFields = ['firstName', 'lastName', 'email', 'phoneNumber', 'password', 'role'];
             for (const field of requiredFields) {
                 if (!body[field]) {
                     return NextResponse.json(
@@ -58,16 +58,19 @@ export class AuthController {
     async login(request) {
         try {
             const body = await request.json();
-            const { username, password } = body;
+            const { email, password, username } = body;
+            
+            // Support both email and username (use email if provided, otherwise username for backward compatibility)
+            const loginIdentifier = email || username;
 
-            if (!username || !password) {
+            if (!loginIdentifier || !password) {
                 return NextResponse.json(
-                    { message: 'Username and password are required' },
+                    { message: 'Email/username and password are required' },
                     { status: 400 }
                 );
             }
 
-            const user = await authService.login(username, password);
+            const user = await authService.login(loginIdentifier, password);
 
             return NextResponse.json({
                 message: 'Login successful',

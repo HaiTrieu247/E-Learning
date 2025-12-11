@@ -7,17 +7,15 @@ export class CourseService {
             connection = await createConnection();
             const [rows] = await connection.execute(`
                 SELECT 
-                    c.courseID, 
-                    c.courseTitle, 
-                    c.courseDescription, 
-                    c.categoryID,
-                    cc.categoryName,
-                    c.approvalStatus,
-                    c.courseStatus,
-                    c.createdDate,
-                    c.lastModified
-                FROM courses c
-                LEFT JOIN course_categories cc ON c.categoryID = cc.categoryID
+                    c.CourseID, 
+                    c.CTitle, 
+                    c.Description, 
+                    c.Created_date,
+                    c.Status,
+                    c.CategoryID,
+                    cc.Name as CategoryName
+                FROM Course c
+                LEFT JOIN Course_category cc ON c.CategoryID = cc.CategoryID
             `);
             return rows;
         } catch (error) {
@@ -40,18 +38,16 @@ export class CourseService {
             connection = await createConnection();
             const [rows] = await connection.execute(
                 `SELECT 
-                    c.courseID, 
-                    c.courseTitle, 
-                    c.courseDescription, 
-                    c.categoryID,
-                    cc.categoryName,
-                    c.approvalStatus,
-                    c.courseStatus,
-                    c.createdDate,
-                    c.lastModified
-                FROM courses c
-                LEFT JOIN course_categories cc ON c.categoryID = cc.categoryID
-                WHERE c.courseID = ?`,
+                    c.CourseID, 
+                    c.CTitle, 
+                    c.Description, 
+                    c.Created_date,
+                    c.Status,
+                    c.CategoryID,
+                    cc.Name as CategoryName
+                FROM Course c
+                LEFT JOIN Course_category cc ON c.CategoryID = cc.CategoryID
+                WHERE c.CourseID = ?`,
                 [courseId]
             );
             return rows[0];
@@ -75,18 +71,16 @@ export class CourseService {
             connection = await createConnection();
             const [rows] = await connection.execute(
                 `SELECT 
-                    c.courseID, 
-                    c.courseTitle, 
-                    c.courseDescription, 
-                    c.categoryID,
-                    cc.categoryName,
-                    c.approvalStatus,
-                    c.courseStatus,
-                    c.createdDate,
-                    c.lastModified
-                FROM courses c
-                LEFT JOIN course_categories cc ON c.categoryID = cc.categoryID
-                WHERE c.categoryID = ?`,
+                    c.CourseID, 
+                    c.CTitle, 
+                    c.Description, 
+                    c.Created_date,
+                    c.Status,
+                    c.CategoryID,
+                    cc.Name as CategoryName
+                FROM Course c
+                LEFT JOIN Course_category cc ON c.CategoryID = cc.CategoryID
+                WHERE c.CategoryID = ?`,
                 [categoryId]
             );
             return rows;

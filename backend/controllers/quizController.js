@@ -4,15 +4,22 @@ const quizController = {
   async createQuiz(lessonID, quizTitle, totalMarks, passingMarks, quizDuration, startDate, dueDate) {
     try {
       // First, create assignment with specified dates
-      const assignmentID = await quizService.createAssignment(lessonID, startDate, dueDate);
+      // Pass all required parameters: title, courseID, moduleID, lessonID, startDate, dueDate
+      const assignmentID = await quizService.createAssignment(
+        quizTitle,
+        null, // courseID - will be fetched from lessonID
+        null, // moduleID - will be fetched from lessonID
+        lessonID,
+        startDate,
+        dueDate
+      );
       
       // Then create the quiz
       const quizID = await quizService.createQuiz(
         assignmentID,
-        quizTitle,
-        totalMarks,
         passingMarks,
-        quizDuration
+        quizDuration,
+        totalMarks
       );
 
       return {

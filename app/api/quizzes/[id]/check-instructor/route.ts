@@ -28,28 +28,28 @@ export async function GET(
   try {
     connection = await createConnection();
 
-    // Step 1: Get instructorID from userID
+    // Step 1: Check if user is an instructor (exists in INSTRUCTOR table)
     const [instructorRows] = await connection.execute(
-      `SELECT instructorID FROM instructors WHERE userID = ?`,
+      `SELECT UserID FROM INSTRUCTOR WHERE UserID = ?`,
       [userID]
     );
 
-    console.log('🔍 Query 1 - instructors table:', instructorRows);
+    console.log('🔍 Query 1 - INSTRUCTOR table:', instructorRows);
 
     if (!Array.isArray(instructorRows) || instructorRows.length === 0) {
       console.log('❌ No instructor found for userID:', userID);
       canEdit = false;
     } else {
-      const instructorID = (instructorRows[0] as any).instructorID;
-      console.log('✅ Found instructorID:', instructorID);
+      const instructorUserID = (instructorRows[0] as any).UserID;
+      console.log('✅ Found instructor UserID:', instructorUserID);
 
-      // Step 2: Find courseID from quizID
+      // Step 2: Find courseID from quizID using create_table.sql schema
       const [courseRows] = await connection.execute(
-        `SELECT cm.courseID
-         FROM Quizzes q
-         JOIN lessonAssignments la ON q.assignmentID = la.assignmentID
-         JOIN moduleLessons ml ON la.lessonID = ml.lessonID
-         JOIN courseModules cm ON ml.moduleID = cm.moduleID
+        `SELECT m.CourseID
+         FROM Quiz q
+         JOIN Assignment a ON q.AssignmentID = a.AssignmentID
+         JOIN Lesson l ON a.LessonID = l.LessonID
+         JOIN Module m ON l.ModuleID = m.ModuleID
          WHERE q.quizID = ?`,
         [quizID]
       );
@@ -60,22 +60,47 @@ export async function GET(
         console.log('❌ No course found for quizID:', quizID);
         canEdit = false;
       } else {
-        const courseID = (courseRows[0] as any).courseID;
+        const courseID = (courseRows[0] as any).CourseID;
         console.log('✅ Found courseID:', courseID);
 
-        // Step 3: Check if instructor is assigned to this course
+        // Step 3: Check if instructor designed this course (DESIGN table)
         const [assignmentRows] = await connection.execute(
-          `SELECT instructorID 
-           FROM courseDesignments 
-           WHERE courseID = ? AND instructorID = ?`,
-          [courseID, instructorID]
+          `SELECT Instructor_UserID 
+           FROM DESIGN 
+           WHERE Course_CourseID = ? AND Instructor_UserID = ?`,
+          [courseID, instructorUserID]
         );
 
-        console.log('🔍 Query 3 - courseDesignments:', assignmentRows);
-        console.log('🔍 Query 3 params:', { courseID, instructorID });
+        console.log('🔍 Query 3 - DESIGN table:', assignmentRows);
+        console.log('🔍 Query 3 params:', { courseID, instructorUserID });
 
-        canEdit = Array.isArray(assignmentRows) && assignmentRows.length > 0;
-        console.log('✅ Final canEdit:', canEdit);
+        const isInstructor = Array.isArray(assignmentRows) && assignmentRows.length > 0;
+        
+        if (!isInstructor) {
+          canEdit = false;
+          console.log('❌ Instructor not assigned to this course');
+        } else {
+          // Step 4: Check if quiz has submissions (if yes, cannot edit)
+          const [submissionRows] = await connection.execute(
+            `SELECT COUNT(*) as submissionCount
+             FROM Submission s
+             JOIN Assignment a ON s.AssignmentID = a.AssignmentID
+             JOIN Quiz q ON a.AssignmentID = q.AssignmentID
+             WHERE q.quizID = ?`,
+            [quizID]
+          );
+
+          const submissionCount = (submissionRows[0] as any).submissionCount;
+          console.log('🔍 Query 4 - Submission count:', submissionCount);
+
+          if (submissionCount > 0) {
+            canEdit = false;
+            console.log('❌ Quiz has submissions, cannot edit');
+          } else {
+            canEdit = true;
+            console.log('✅ Final canEdit: true (instructor assigned and no submissions)');
+          }
+        }
       }
     }
   } catch (error: any) {

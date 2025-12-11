@@ -28,31 +28,31 @@ export async function GET(
   try {
     connection = await createConnection();
 
-    // First get instructorID from userID
+    // Check if user is instructor in new schema (INSTRUCTOR table with UserID)
     const [instructorRows] = await connection.execute(
-      `SELECT instructorID FROM instructors WHERE userID = ?`,
+      `SELECT UserID FROM INSTRUCTOR WHERE UserID = ?`,
       [userID]
     );
 
-    console.log('🔍 Query 1 - instructors table:', instructorRows);
+    console.log('🔍 Query 1 - INSTRUCTOR table:', instructorRows);
 
     if (!Array.isArray(instructorRows) || instructorRows.length === 0) {
       console.log('❌ No instructor found for userID:', userID);
       canEdit = false;
     } else {
-      const instructorID = (instructorRows[0] as any).instructorID;
-      console.log('✅ Found instructorID:', instructorID);
+      const instructorUserID = (instructorRows[0] as any).UserID;
+      console.log('✅ Found instructor UserID:', instructorUserID);
 
-      // Check if this instructor is assigned to this course
+      // Check if this instructor is assigned to this course via DESIGN table
       const [rows] = await connection.execute(
-        `SELECT instructorID 
-         FROM courseDesignments 
-         WHERE courseID = ? AND instructorID = ?`,
-        [courseID, instructorID]
+        `SELECT Instructor_UserID 
+         FROM DESIGN 
+         WHERE Course_CourseID = ? AND Instructor_UserID = ?`,
+        [courseID, instructorUserID]
       );
 
-      console.log('🔍 Query 2 - courseDesignments table:', rows);
-      console.log('🔍 Query 2 params:', { courseID, instructorID, courseIDType: typeof courseID, instructorIDType: typeof instructorID });
+      console.log('🔍 Query 2 - DESIGN table:', rows);
+      console.log('🔍 Query 2 params:', { courseID, instructorUserID, courseIDType: typeof courseID, instructorUserIDType: typeof instructorUserID });
 
       canEdit = Array.isArray(rows) && rows.length > 0;
       console.log('✅ Final canEdit:', canEdit);

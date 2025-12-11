@@ -24,13 +24,13 @@ export default function CourseTable({ courses, loading }: CourseTableProps) {
   const filteredCourses = courses.filter((course: any) => {
     const matchesSearch = 
       searchQuery === '' ||
-      course.courseTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.courseDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (course.categoryName && course.categoryName.toLowerCase().includes(searchQuery.toLowerCase()))
+      course.CTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.Description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (course.CategoryName && course.CategoryName.toLowerCase().includes(searchQuery.toLowerCase()))
 
     const matchesLetter = 
       selectedLetter === null ||
-      course.courseTitle.toUpperCase().startsWith(selectedLetter)
+      course.CTitle.toUpperCase().startsWith(selectedLetter)
 
     return matchesSearch && matchesLetter
   })
@@ -83,20 +83,20 @@ export default function CourseTable({ courses, loading }: CourseTableProps) {
             ) : (
               filteredCourses.map((course: any) => (
                 <tr 
-                  key={course.courseID} 
-                  onClick={() => handleCourseClick(course.courseID)}
+                  key={course.CourseID} 
+                  onClick={() => handleCourseClick(course.CourseID)}
                   className="hover:bg-indigo-50 transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-3 border text-center">{course.courseID}</td>
-                  <td className="px-4 py-3 border font-medium text-gray-900">{course.courseTitle}</td>
+                  <td className="px-4 py-3 border text-center">{course.CourseID}</td>
+                  <td className="px-4 py-3 border font-medium text-gray-900">{course.CTitle}</td>
                   <td className="px-4 py-3 border text-gray-600 text-sm">
-                    {course.courseDescription.length > 100 
-                      ? `${course.courseDescription.substring(0, 100)}...` 
-                      : course.courseDescription}
+                    {course.Description.length > 100 
+                      ? `${course.Description.substring(0, 100)}...` 
+                      : course.Description}
                   </td>
                   <td className="px-4 py-3 border">
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {course.categoryName || 'N/A'}
+                      {course.CategoryName || 'N/A'}
                     </span>
                   </td>
                 </tr>

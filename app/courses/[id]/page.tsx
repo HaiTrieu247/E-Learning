@@ -44,7 +44,7 @@ export default function CourseDetailPage({ params }: PageProps) {
       try {
         const res = await fetch('/api/courses');
         const courses = await res.json();
-        const foundCourse = courses.find((c: Course) => c.courseID === parseInt(courseID));
+        const foundCourse = courses.find((c: Course) => c.CourseID === parseInt(courseID));
         setCourse(foundCourse || null);
       } catch (error) {
         console.error('Error fetching course:', error);
@@ -73,7 +73,7 @@ export default function CourseDetailPage({ params }: PageProps) {
         const user = JSON.parse(userData);
         
         // Check if user is instructor and assigned to this course
-        const res = await fetch(`/api/courses/${courseID}/check-instructor?userID=${user.userID}`, {
+        const res = await fetch(`/api/courses/${courseID}/check-instructor?userID=${user.UserID}`, {
           signal: abortController.signal
         });
         
@@ -346,11 +346,11 @@ export default function CourseDetailPage({ params }: PageProps) {
                   <GraduationCap size={32} className="text-white" />
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold gradient-text mb-2">{course.courseTitle}</h1>
-                  <p className="text-slate-600 mb-3">{course.courseDescription}</p>
-                  {course.categoryName && (
+                  <h1 className="text-3xl font-bold gradient-text mb-2">{course.CTitle}</h1>
+                  <p className="text-slate-600 mb-3">{course.Description}</p>
+                  {course.CategoryName && (
                     <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-indigo-600 shadow-smooth">
-                      {course.categoryName}
+                      {course.CategoryName}
                     </span>
                   )}
                 </div>
@@ -403,13 +403,13 @@ export default function CourseDetailPage({ params }: PageProps) {
               ) : (
                 <div className="space-y-4">
                   {modules.map((module) => {
-                    const details = moduleDetails[module.moduleID];
-                    const isExpanded = expandedModule === module.moduleID;
+                    const details = moduleDetails[module.ModuleID];
+                    const isExpanded = expandedModule === module.ModuleID;
 
                     return (
-                      <div key={module.moduleID} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                      <div key={module.ModuleID} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <button
-                          onClick={() => handleModuleExpand(module.moduleID)}
+                          onClick={() => handleModuleExpand(module.ModuleID)}
                           className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center gap-4">
@@ -483,15 +483,17 @@ export default function CourseDetailPage({ params }: PageProps) {
                                               <Plus size={18} />
                                             </button>
                                           )}
-                                          <a
-                                            href={lesson.lessonMaterialURL}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <ExternalLink size={18} />
-                                          </a>
+                                          {lesson.lessonMaterialURL && lesson.lessonMaterialURL !== '#' && (
+                                            <a
+                                              href={lesson.lessonMaterialURL}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <ExternalLink size={18} />
+                                            </a>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
@@ -641,14 +643,14 @@ export default function CourseDetailPage({ params }: PageProps) {
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-semibold">
-                                  {learner.FNAME[0]}{learner.LNAME[0]}
+                                  {learner.FullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                                 </div>
                                 <span className="font-medium text-slate-800">
-                                  {learner.FNAME} {learner.LNAME}
+                                  {learner.FullName}
                                 </span>
                               </div>
                             </td>
-                            <td className="py-3 px-4 text-slate-600">{learner.email}</td>
+                            <td className="py-3 px-4 text-slate-600">{learner.Email}</td>
                             <td className="py-3 px-4 text-slate-600">
                               <div className="flex items-center gap-2">
                                 <Calendar size={16} className="text-slate-400" />
