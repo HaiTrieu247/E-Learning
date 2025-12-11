@@ -1,41 +1,41 @@
 export interface CourseModule {
-  moduleID: number;
-  courseID: number;
-  moduleTitle: string;
-  moduleOrder: number;
+  ModuleID: number; // from Module table
+  CourseID: number;
+  moduleTitle: string; // from Title column
+  moduleOrder: number; // from Order_Num column
   lessonCount: number;
   quizCount: number;
 }
 
 export interface ModuleLesson {
-  lessonID: number;
-  moduleID: number;
-  lessonTitle: string;
-  lessonOrder: number;
-  lessonDuration: number;
-  lessonMaterialURL: string;
+  LessonID: number; // from Lesson table
+  ModuleID: number;
+  lessonTitle: string; // from Title column
+  lessonOrder: number; // from Order_Num column
+  lessonDuration: number; // from Duration column
 }
 
 export interface ModuleQuiz {
-  quizID: number;
-  quizTitle: string;
-  totalMarks: number;
-  passingMarks: number;
-  quizDuration: number;
+  quizID: number; // from Quiz table
+  quizTitle: string; // from Assignment.title
+  totalMarks: number; // from totalScore
+  passingMarks: number; // from Passing_Score
+  quizDuration: number; // from Duration
   questionCount: number;
-  assignmentID?: number;
+  assignmentID?: number; // from AssignmentID
   startDate?: string;
   dueDate?: string;
 }
 
 export interface ModuleExercise {
-  exerciseID: number;
-  exerciseTitle: string;
-  exerciseDescription: string;
+  ExerciseID: number; // from Exercise table
+  exerciseTitle: string; // from Title
+  exerciseDescription: string; // from Description
 }
 
 export interface LessonAssignment {
-  assignmentID: number;
+  AssignmentID: number; // from Assignment table
+  assignmentTitle: string; // from title column
   startDate: string;
   dueDate: string;
   quiz: ModuleQuiz | null;

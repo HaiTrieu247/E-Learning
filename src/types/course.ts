@@ -1,13 +1,15 @@
 export interface Course {
-  courseID: number
-  courseTitle: string
-  courseDescription: string
-  categoryID?: number
-  categoryName?: string
+  CourseID: number
+  CTitle: string
+  Description: string
+  Created_date?: Date
+  Status?: string
+  CategoryID?: number
+  CategoryName?: string
 }
 
 export interface CourseCategory {
-  categoryID: number
-  categoryName: string
-  ParentCategoryID?: number
+  CategoryID: number
+  Name: string
+  Parent_ID?: number
 }

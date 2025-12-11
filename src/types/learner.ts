@@ -1,10 +1,9 @@
 export interface CourseLearner {
-  FNAME: string;
-  LNAME: string;
-  email: string;
-  enrollmentDate: string;
-  progressPercentage: number;
-  status?: string;
+  FullName: string; // from USER.FullName
+  Email: string; // from USER.Email
+  enrollmentDate: string; // from ENROLL.Date_signed
+  progressPercentage: number; // from ENROLL.Progress
+  Status?: string; // from ENROLL.Status
 }
 
 export interface StudentQuizPerformance {

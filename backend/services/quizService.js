@@ -2,13 +2,14 @@ import createConnection from '../config/db.js';
 
 /**
  * Create assignment for a lesson with specified dates
+ * Using Assignment table from create_table.sql
  */
-export const createAssignment = async (lessonID, startDate, dueDate) => {
+export const createAssignment = async (title, courseID, moduleID, lessonID, startDate, dueDate) => {
     const connection = await createConnection();
     try {
         const [result] = await connection.execute(
-            'INSERT INTO lessonAssignments (lessonID, startDate, dueDate) VALUES (?, ?, ?)',
-            [lessonID, startDate, dueDate]
+            'INSERT INTO Assignment (startDate, dueDate, title, CourseID, ModuleID, LessonID) VALUES (?, ?, ?, ?, ?, ?)',
+            [startDate, dueDate, title, courseID, moduleID, lessonID]
         );
 
         return result.insertId;
@@ -20,14 +21,15 @@ export const createAssignment = async (lessonID, startDate, dueDate) => {
 
 /**
  * Create a new quiz
+ * Using Quiz table from create_table.sql
  */
-export const createQuiz = async (assignmentID, quizTitle, totalMarks, passingMarks, quizDuration) => {
+export const createQuiz = async (assignmentID, passingScore, duration, totalScore) => {
     const connection = await createConnection();
     try {
         const [result] = await connection.execute(
-            `INSERT INTO Quizzes (assignmentID, quizTitle, totalMarks, passingMarks, quizDuration)
-             VALUES (?, ?, ?, ?, ?)`,
-            [assignmentID, quizTitle, totalMarks, passingMarks, quizDuration]
+            `INSERT INTO Quiz (Passing_Score, Duration, totalScore, AssignmentID)
+             VALUES (?, ?, ?, ?)`,
+            [passingScore, duration, totalScore, assignmentID]
         );
 
         return result.insertId;
@@ -39,13 +41,18 @@ export const createQuiz = async (assignmentID, quizTitle, totalMarks, passingMar
 
 /**
  * Get ALL questions from ALL quizzes with their options
- * Uses sp_GetQuizDetails for each quiz
+ * Uses sp_GetQuizDetails for each quiz from create_table.sql
  */
 export const getAllQuestions = async () => {
     const connection = await createConnection();
     try {
-        // First, get all quiz IDs
-        const [quizzes] = await connection.query('SELECT quizID, quizTitle FROM Quizzes ORDER BY quizID');
+        // First, get all quiz IDs and related assignment info
+        const [quizzes] = await connection.query(`
+            SELECT q.quizID, a.title as quizTitle 
+            FROM Quiz q
+            JOIN Assignment a ON q.AssignmentID = a.AssignmentID
+            ORDER BY q.quizID
+        `);
         
         if (quizzes.length === 0) {
             return [];
@@ -164,13 +171,14 @@ export const getQuizQuestions = async (quizID = 1) => {
 
 /**
  * Get a single question by ID with its options
+ * Using Question and Option_Table from create_table.sql
  */
 export const getQuestionById = async (questionID) => {
     const connection = await createConnection();
     try {
-        // Get question details
+        // Get question details from Question table
         const [questionRows] = await connection.query(
-            'SELECT questionID, questionDescription, questionScore FROM quizQuestions WHERE questionID = ?',
+            'SELECT questionID, qText, score FROM Question WHERE questionID = ?',
             [questionID]
         );
         
@@ -180,25 +188,25 @@ export const getQuestionById = async (questionID) => {
         
         const question = questionRows[0];
         
-        // Get options
+        // Get options from Option_Table
         const [optionRows] = await connection.query(
-            'SELECT optionID, optionText, isCorrect FROM questionOptions WHERE questionID = ? ORDER BY optionID',
+            'SELECT optionID, oText, is_correct FROM Option_Table WHERE questionID = ? ORDER BY optionID',
             [questionID]
         );
         
         // Transform to frontend format
         const options = optionRows.map((opt, index) => ({
             id: String.fromCharCode(65 + index), // A, B, C, D
-            text: opt.optionText
+            text: opt.oText
         }));
         
-        const correctOptionIndex = optionRows.findIndex(opt => opt.isCorrect === 1);
+        const correctOptionIndex = optionRows.findIndex(opt => opt.is_correct === 1 || opt.is_correct === true);
         const correctOptionId = correctOptionIndex >= 0 ? String.fromCharCode(65 + correctOptionIndex) : null;
         
         return {
             id: question.questionID,
-            content: question.questionDescription,
-            points: question.questionScore,
+            content: question.qText,
+            points: question.score,
             options,
             correctOptionId,
             createdAt: new Date().toISOString()
@@ -211,26 +219,33 @@ export const getQuestionById = async (questionID) => {
 
 /**
  * Add a new question with options to a quiz
- * Uses sp_AddQuestion stored procedure from ELearning.sql (section 2.1)
+ * Uses sp_AddQuestion stored procedure from create_table.sql (section 2.1)
  * 
  * The stored procedure includes these validations:
  * - quizID must exist
  * - description cannot be empty
  * - score must be > 0
- * - Trigger tg_check_quiz_total_score ensures total score doesn't exceed quiz totalMarks
+ * - Trigger tg_check_quiz_total_score ensures total score doesn't exceed quiz totalScore
  */
 export const addQuestion = async (quizID, questionData) => {
     const connection = await createConnection();
     try {
         // Validate quiz exists first
         const [quizCheck] = await connection.query(
-            'SELECT quizID FROM Quizzes WHERE quizID = ?',
+            'SELECT quizID FROM Quiz WHERE quizID = ?',
             [quizID]
         );
         
         if (quizCheck.length === 0) {
             throw new Error('The provided quizID does not exist');
         }
+        
+        // Get AssignmentID for the quiz
+        const [assignmentInfo] = await connection.query(
+            'SELECT AssignmentID FROM Quiz WHERE quizID = ?',
+            [quizID]
+        );
+        const assignmentID = assignmentInfo[0].AssignmentID;
         
         // Start transaction
         await connection.beginTransaction();
@@ -247,14 +262,14 @@ export const addQuestion = async (quizID, questionData) => {
         );
         const questionID = newQuestion[0].questionID;
         
-        // Add options (must be exactly 4 options)
+        // Add options to Option_Table
         for (let i = 0; i < questionData.options.length; i++) {
             const option = questionData.options[i];
             const isCorrect = option.id === questionData.correctOptionId;
             
             await connection.query(
-                'INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES (?, ?, ?)',
-                [questionID, option.text, isCorrect]
+                'INSERT INTO Option_Table (oText, is_correct, questionID, quizID, AssignmentID) VALUES (?, ?, ?, ?, ?)',
+                [option.text, isCorrect, questionID, quizID, assignmentID]
             );
         }
         
@@ -273,26 +288,29 @@ export const addQuestion = async (quizID, questionData) => {
 
 /**
  * Update an existing question
- * Uses sp_UpdateQuestion stored procedure from ELearning.sql (section 2.1)
+ * Uses sp_UpdateQuestion stored procedure from create_table.sql (section 2.1)
  * 
  * The stored procedure includes these validations:
  * - questionID must exist
  * - description cannot be empty
  * - score must be > 0
- * - Trigger tg_check_quiz_total_score_update ensures total score doesn't exceed quiz totalMarks
+ * - Trigger tg_check_quiz_total_score_update ensures total score doesn't exceed quiz totalScore
  */
 export const updateQuestion = async (questionID, questionData) => {
     const connection = await createConnection();
     try {
         // Check if question exists first
         const [checkQuestion] = await connection.query(
-            'SELECT questionID FROM quizQuestions WHERE questionID = ?',
+            'SELECT questionID, quizID, AssignmentID FROM Question WHERE questionID = ?',
             [questionID]
         );
         
         if (checkQuestion.length === 0) {
             throw new Error('Question ID not found');
         }
+        
+        const quizID = checkQuestion[0].quizID;
+        const assignmentID = checkQuestion[0].AssignmentID;
         
         // Start transaction
         await connection.beginTransaction();
@@ -303,20 +321,20 @@ export const updateQuestion = async (questionID, questionData) => {
             [questionID, questionData.content, questionData.points]
         );
         
-        // Delete old options
+        // Delete old options from Option_Table
         await connection.query(
-            'DELETE FROM questionOptions WHERE questionID = ?',
+            'DELETE FROM Option_Table WHERE questionID = ?',
             [questionID]
         );
         
-        // Add new options
+        // Add new options to Option_Table
         for (let i = 0; i < questionData.options.length; i++) {
             const option = questionData.options[i];
             const isCorrect = option.id === questionData.correctOptionId;
             
             await connection.query(
-                'INSERT INTO questionOptions (questionID, optionText, isCorrect) VALUES (?, ?, ?)',
-                [questionID, option.text, isCorrect]
+                'INSERT INTO Option_Table (oText, is_correct, questionID, quizID, AssignmentID) VALUES (?, ?, ?, ?, ?)',
+                [option.text, isCorrect, questionID, quizID, assignmentID]
             );
         }
         
@@ -335,7 +353,7 @@ export const updateQuestion = async (questionID, questionData) => {
 
 /**
  * Delete a question
- * Uses sp_DeleteQuestion stored procedure from ELearning.sql (section 2.1)
+ * Uses sp_DeleteQuestion stored procedure from create_table.sql (section 2.1)
  * 
  * Note: The stored procedure requires that all options be deleted first
  * to ensure data integrity. We handle this automatically.
@@ -348,7 +366,7 @@ export const deleteQuestion = async (questionID) => {
         
         // Check if question exists first
         const [checkQuestion] = await connection.query(
-            'SELECT questionID FROM quizQuestions WHERE questionID = ?',
+            'SELECT questionID FROM Question WHERE questionID = ?',
             [questionID]
         );
         
@@ -356,9 +374,9 @@ export const deleteQuestion = async (questionID) => {
             throw new Error('Question ID not found');
         }
         
-        // First delete all options (as required by the stored procedure)
+        // First delete all options from Option_Table (as required by the stored procedure)
         await connection.query(
-            'DELETE FROM questionOptions WHERE questionID = ?',
+            'DELETE FROM Option_Table WHERE questionID = ?',
             [questionID]
         );
         

@@ -7,19 +7,19 @@ export class ModuleService {
             connection = await createConnection();
             const [rows] = await connection.execute(`
                 SELECT 
-                    cm.moduleID,
-                    cm.courseID,
-                    cm.moduleTitle,
-                    cm.moduleOrder,
-                    COUNT(DISTINCT ml.lessonID) as lessonCount,
+                    m.ModuleID,
+                    m.CourseID,
+                    m.Title as moduleTitle,
+                    m.Order_Num as moduleOrder,
+                    COUNT(DISTINCT l.LessonID) as lessonCount,
                     COUNT(DISTINCT q.quizID) as quizCount
-                FROM courseModules cm
-                LEFT JOIN moduleLessons ml ON cm.moduleID = ml.moduleID
-                LEFT JOIN lessonAssignments la ON ml.lessonID = la.lessonID
-                LEFT JOIN Quizzes q ON la.assignmentID = q.assignmentID
-                WHERE cm.courseID = ?
-                GROUP BY cm.moduleID, cm.courseID, cm.moduleTitle, cm.moduleOrder
-                ORDER BY cm.moduleOrder ASC
+                FROM Module m
+                LEFT JOIN Lesson l ON m.ModuleID = l.ModuleID
+                LEFT JOIN Assignment a ON l.LessonID = a.LessonID
+                LEFT JOIN Quiz q ON a.AssignmentID = q.AssignmentID
+                WHERE m.CourseID = ?
+                GROUP BY m.ModuleID, m.CourseID, m.Title, m.Order_Num
+                ORDER BY m.Order_Num ASC
             `, [courseId]);
             return rows;
         } catch (error) {
@@ -41,33 +41,37 @@ export class ModuleService {
         try {
             connection = await createConnection();
             
-            // Get all lessons with their assignments (quiz + exercise)
+            // Get all lessons with their assignments (quiz + exercise) from create_table.sql schema
             const [lessons] = await connection.execute(`
                 SELECT 
-                    ml.*,
-                    la.assignmentID,
-                    la.startDate,
-                    la.dueDate,
+                    l.LessonID,
+                    l.Title as lessonTitle,
+                    l.Order_Num as lessonOrder,
+                    l.Duration as lessonDuration,
+                    l.ModuleID,
+                    a.AssignmentID,
+                    a.startDate,
+                    a.dueDate,
+                    a.title as assignmentTitle,
                     q.quizID,
-                    q.quizTitle,
-                    q.totalMarks,
-                    q.passingMarks,
-                    q.quizDuration,
-                    COUNT(DISTINCT qq.questionID) as questionCount,
-                    e.exerciseID,
-                    e.exerciseTitle,
-                    e.exerciseDescription
-                FROM moduleLessons ml
-                LEFT JOIN lessonAssignments la ON ml.lessonID = la.lessonID
-                LEFT JOIN Quizzes q ON la.assignmentID = q.assignmentID
-                LEFT JOIN quizQuestions qq ON q.quizID = qq.quizID
-                LEFT JOIN exercises e ON la.assignmentID = e.assignmentID
-                WHERE ml.moduleID = ?
-                GROUP BY ml.lessonID, ml.moduleID, ml.lessonTitle, ml.lessonOrder, ml.lessonDuration, 
-                         ml.lessonMaterialURL, la.assignmentID, la.startDate, la.dueDate,
-                         q.quizID, q.quizTitle, q.totalMarks, q.passingMarks, q.quizDuration,
-                         e.exerciseID, e.exerciseTitle, e.exerciseDescription
-                ORDER BY ml.lessonOrder ASC, la.assignmentID ASC
+                    q.Passing_Score as passingMarks,
+                    q.Duration as quizDuration,
+                    q.totalScore as totalMarks,
+                    COUNT(DISTINCT qst.questionID) as questionCount,
+                    e.ExerciseID,
+                    e.Title as exerciseTitle,
+                    e.Description as exerciseDescription
+                FROM Lesson l
+                LEFT JOIN Assignment a ON l.LessonID = a.LessonID
+                LEFT JOIN Quiz q ON a.AssignmentID = q.AssignmentID
+                LEFT JOIN Question qst ON q.quizID = qst.quizID
+                LEFT JOIN Exercise e ON a.AssignmentID = e.AssignmentID
+                WHERE l.ModuleID = ?
+                GROUP BY l.LessonID, l.Title, l.Order_Num, l.Duration, l.ModuleID,
+                         a.AssignmentID, a.startDate, a.dueDate, a.title,
+                         q.quizID, q.Passing_Score, q.Duration, q.totalScore,
+                         e.ExerciseID, e.Title, e.Description
+                ORDER BY l.Order_Num ASC, a.AssignmentID ASC
             `, [moduleId]);
 
             // Transform data: group assignments under each lesson
@@ -75,24 +79,24 @@ export class ModuleService {
             
             lessons.forEach(row => {
                 // Create lesson entry if not exists
-                if (!lessonsMap.has(row.lessonID)) {
-                    lessonsMap.set(row.lessonID, {
-                        lessonID: row.lessonID,
-                        moduleID: row.moduleID,
+                if (!lessonsMap.has(row.LessonID)) {
+                    lessonsMap.set(row.LessonID, {
+                        lessonID: row.LessonID,
+                        moduleID: row.ModuleID,
                         lessonTitle: row.lessonTitle,
                         lessonOrder: row.lessonOrder,
                         lessonDuration: row.lessonDuration,
-                        lessonMaterialURL: row.lessonMaterialURL,
                         assignments: [] // Array of assignments
                     });
                 }
                 
-                const lesson = lessonsMap.get(row.lessonID);
+                const lesson = lessonsMap.get(row.LessonID);
                 
                 // Add assignment if exists and not already added
-                if (row.assignmentID && !lesson.assignments.find(a => a.assignmentID === row.assignmentID)) {
+                if (row.AssignmentID && !lesson.assignments.find(a => a.assignmentID === row.AssignmentID)) {
                     const assignment = {
-                        assignmentID: row.assignmentID,
+                        assignmentID: row.AssignmentID,
+                        assignmentTitle: row.assignmentTitle,
                         startDate: row.startDate,
                         dueDate: row.dueDate,
                         quiz: null,
@@ -103,7 +107,7 @@ export class ModuleService {
                     if (row.quizID) {
                         assignment.quiz = {
                             quizID: row.quizID,
-                            quizTitle: row.quizTitle,
+                            quizTitle: row.assignmentTitle,
                             totalMarks: row.totalMarks,
                             passingMarks: row.passingMarks,
                             quizDuration: row.quizDuration,
@@ -112,9 +116,9 @@ export class ModuleService {
                     }
                     
                     // Add exercise if exists
-                    if (row.exerciseID) {
+                    if (row.ExerciseID) {
                         assignment.exercise = {
-                            exerciseID: row.exerciseID,
+                            exerciseID: row.ExerciseID,
                             exerciseTitle: row.exerciseTitle,
                             exerciseDescription: row.exerciseDescription
                         };

@@ -7,11 +7,11 @@ export async function GET() {
         connection = await createConnection();
         const [rows] = await connection.execute(`
             SELECT 
-                categoryID, 
-                categoryName, 
-                ParentCategoryID
-            FROM course_categories
-            ORDER BY categoryName ASC
+                CategoryID, 
+                Name as categoryName, 
+                Parent_ID as ParentCategoryID
+            FROM Course_category
+            ORDER BY Name ASC
         `);
         return NextResponse.json(rows, { status: 200 });
     } catch (error) {

@@ -6,14 +6,21 @@ export class UserService {
         try {
             connection = await createConnection();
             const [rows] = await connection.execute(
-                `SELECT u.*, 
-                        i.instructorID, 
-                        l.learnerID, 
-                        a.adminID 
-                 FROM users u
-                 LEFT JOIN instructors i ON u.userID = i.userID
-                 LEFT JOIN learners l ON u.userID = l.userID
-                 LEFT JOIN administrators a ON u.userID = a.adminID`
+                `SELECT u.UserID, 
+                        u.FullName, 
+                        u.Email, 
+                        u.phoneNumber, 
+                        u.Role,
+                        u.DateCreated,
+                        l.Birthday,
+                        i.Bio,
+                        i.Specialization,
+                        a.adminID,
+                        a.accessLevel
+                 FROM USER u
+                 LEFT JOIN LEARNER l ON u.UserID = l.UserID
+                 LEFT JOIN INSTRUCTOR i ON u.UserID = i.UserID
+                 LEFT JOIN ADMIN a ON u.UserID = a.UserID`
             );
             return rows;
         } catch (error) {
@@ -35,15 +42,22 @@ export class UserService {
         try {
             connection = await createConnection();
             const [rows] = await connection.execute(
-                `SELECT u.*, 
-                        i.instructorID, 
-                        l.learnerID, 
-                        a.adminID 
-                 FROM users u
-                 LEFT JOIN instructors i ON u.userID = i.userID
-                 LEFT JOIN learners l ON u.userID = l.userID
-                 LEFT JOIN administrators a ON u.userID = a.adminID
-                 WHERE u.userID = ?`,
+                `SELECT u.UserID, 
+                        u.FullName, 
+                        u.Email, 
+                        u.phoneNumber, 
+                        u.Role,
+                        u.DateCreated,
+                        l.Birthday,
+                        i.Bio,
+                        i.Specialization,
+                        a.adminID,
+                        a.accessLevel
+                 FROM USER u
+                 LEFT JOIN LEARNER l ON u.UserID = l.UserID
+                 LEFT JOIN INSTRUCTOR i ON u.UserID = i.UserID
+                 LEFT JOIN ADMIN a ON u.UserID = a.UserID
+                 WHERE u.UserID = ?`,
                 [userId]
             );
             return rows[0];
@@ -66,7 +80,7 @@ export class UserService {
         try {
             connection = await createConnection();
             const [rows] = await connection.execute(
-                "SELECT * FROM users WHERE role = ?",
+                "SELECT UserID, FullName, Email, phoneNumber, Role, DateCreated FROM USER WHERE Role = ?",
                 [role]
             );
             return rows;
