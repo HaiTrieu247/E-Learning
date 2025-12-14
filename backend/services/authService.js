@@ -101,14 +101,6 @@ export class AuthService {
 
             const user = users[0];
 
-            // Check if account is approved and active
-            if (user.approvalStatus !== 'approved') {
-                throw new Error('Account is not approved yet');
-            }
-
-            if (user.accountStatus !== 'active') {
-                throw new Error('Account is inactive or suspended');
-            }
 
             // Verify password
             const isPasswordValid = await bcrypt.compare(password, user.Password_hash);
